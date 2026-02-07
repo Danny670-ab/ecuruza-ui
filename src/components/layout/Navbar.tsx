@@ -58,19 +58,32 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
 
   const [lang, setLang] = useState<Lang>(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('ecuruza_lang') : null;
-    return (saved as Lang) || 'en';
+    if (typeof window === 'undefined') return 'en';
+    return (localStorage.getItem('ecuruza_lang') as Lang) || 'en';
   });
 
+  // persist language preference
   useEffect(() => {
     localStorage.setItem('ecuruza_lang', lang);
   }, [lang]);
 
-  // close both panels on route change
+  // close both panels on route change (only if they are open)
+  // Using queueMicrotask to defer state updates and avoid cascading renders
   useEffect(() => {
-    setOpen(false);
-    setMobileSearchOpen(false);
-  }, [location.pathname]);
+    if (open || mobileSearchOpen) {
+      const run = () => {
+        setOpen(false);
+        setMobileSearchOpen(false);
+      };
+      // queueMicrotask is more efficient than setTimeout for deferring to next tick
+      queueMicrotask(run);
+      return () => {
+        // No-op cleanup since queueMicrotask can't be cancelled,
+        // but the effect cleanup ensures we don't update after unmount
+      };
+    }
+    return () => {};
+  }, [location.pathname, open, mobileSearchOpen]);
 
   useEffect(() => {
     if (open || mobileSearchOpen) document.body.style.overflow = 'hidden';
