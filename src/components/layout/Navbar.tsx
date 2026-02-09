@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import addcartImg from '../../assets/cart.png';
+import logoImg from '../../assets/logo.png';
 
 type NavItemKey = { href: string; key: string; special?: boolean };
 
@@ -140,9 +141,12 @@ const Navbar: React.FC = () => {
         <Link
           to="/"
           aria-label="E-Curuza home"
-          className="text-2xl font-bold bg-gradient-to-r from-[#1CA225] via-[#10381C] to-[#18C850] bg-clip-text text-transparent italic flex-shrink-0"
+          className="flex items-center gap-0 flex-shrink-0"
         >
-          E-Curuza
+          <img src={logoImg} alt="E-Curuza logo" className="h-20 w-auto object-contain" />
+          <span className="text-2xl font-bold bg-gradient-to-r from-[#1CA225] via-[#10381C] to-[#18C850] bg-clip-text text-transparent italic">
+            E-Curuza
+          </span>
         </Link>
 
         {/* Search visible on md+ in the upper row */}
