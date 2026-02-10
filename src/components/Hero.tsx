@@ -1,10 +1,8 @@
-import curuza from '../assets/curuza.png'
 
 function Hero() {
   return (
     <div
-      className="min-h-screen mt-10 w-full bg-center bg-cover flex items-start justify-start"
-      style={{ backgroundImage: `url(${curuza})` }}
+      className="min-h-screen mt-10 ml-4 w-full bg-center bg-cover flex items-start justify-start"
     >
       <div className="max-w-6xl w-full pl-4 sm:pl-6 lg:pl-12 py-8 flex flex-col items-start text-left">
         <h1 className="text-black font-bold">
