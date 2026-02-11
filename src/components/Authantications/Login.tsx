@@ -103,7 +103,7 @@ const Login: React.FC = () => {
           <div className='items-center justify-center flex'>
             <button
               type="submit"
-              className="mt-2 w-[316px] bg-[#3F4E40] text-white py-2 rounded-md text-base font-medium shadow"
+              className="mt-2 w-[316px] bg-[#3F4E40] text-white py-2 rounded-full text-base font-medium shadow"
             >
               Login
             </button>

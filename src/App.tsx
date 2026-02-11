@@ -4,6 +4,7 @@ import Login from './components/Authantications/Login';
 import ForgotPassword from './components/Authantications/ForgotPassword';
 import ResetPassword from './components/Authantications/ResetPassword';
 import Home from './pages/Home';
+import Shop from './pages/Shop';
 import VerifyCode from './components/Authantications/VerfyCode';
 import SignUp from './components/Authantications/SignUp';
 import SellerRegistration from './components/Authantications/SellerRegistration';
@@ -15,6 +16,7 @@ function App() {
       <div className="pt-20">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />

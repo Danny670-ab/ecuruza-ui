@@ -149,7 +149,7 @@ const SignUp: React.FC = () => {
           <div className="flex items-center justify-center">
             <button
               type="submit"
-              className={`w-[316px] py-2 rounded-full text-sm font-medium ${isFormFilled && !loading ? 'bg-[#3F4E40] text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+              className={`w-[316px] py-2 rounded-full text-sm font-medium ${isFormFilled && !loading ? 'bg-[#3F4E40] text-white' : ' bg-[#5a695b] text-gray-200 cursor-not-allowed'}`}
               disabled={!isFormFilled || loading}
             >
               {loading ? 'Signing...' : 'Sign Up'}
