@@ -56,13 +56,13 @@ const SellerRegistration = () => {
       <div className="w-[488px] max-w-md rounded-2xl bg-[#F2EEEE] shadow-md p-5">
         <h1 className="text-xl text-center mt-4 mb-6 text-[#0C6227] font-bold">Seller Registration</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+        <form onSubmit={handleSubmit} className="space-y-3 relative items-center justify-center " noValidate>
 
           <input
             placeholder="Full Name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="w-full px-3 py-2 rounded-md border"
+            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
           />
           {errors.firstName && <p className="text-xs text-red-600">{errors.firstName}</p>}
 
@@ -70,7 +70,7 @@ const SellerRegistration = () => {
             placeholder="Business Name"
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
-            className="w-full px-3 py-2 rounded-md border"
+            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
           />
           {errors.businessName && <p className="text-xs text-red-600">{errors.businessName}</p>}
 
@@ -79,7 +79,7 @@ const SellerRegistration = () => {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 rounded-md border"
+            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
           />
           {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
 
@@ -88,7 +88,7 @@ const SellerRegistration = () => {
             placeholder="Phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full px-3 py-2 rounded-md border"
+            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
           />
           {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
 
@@ -98,9 +98,9 @@ const SellerRegistration = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border"
+            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
             />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2 text-xs">
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-16 top-2 text-xs">
               {showPassword ? 'Hide' : 'Show'}
             </button>
           </div>
@@ -112,9 +112,9 @@ const SellerRegistration = () => {
               placeholder="Confirm Password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full px-3 py-2 rounded-md border"
+            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
             />
-            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-2 text-xs">
+            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-16 top-2 text-xs">
               {showConfirm ? 'Hide' : 'Show'}
             </button>
           </div>
@@ -123,7 +123,7 @@ const SellerRegistration = () => {
           <button
             type="submit"
             disabled={!isFormFilled || loading}
-            className={`w-full py-2 rounded-full ${isFormFilled ? 'bg-green-700 text-white' : 'bg-gray-300'}`}
+            className={`w-[316px] ml-10 py-2 rounded-full ${isFormFilled ? 'bg-[#3F4E40] text-white' : 'bg-[#5a695b] text-gray-200 cursor-not-allowed'}`}
           >
             {loading ? 'Creating...' : 'Create Account'}
           </button>

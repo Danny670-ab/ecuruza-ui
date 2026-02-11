@@ -130,9 +130,9 @@ const Navbar: React.FC = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white backdrop-blur-sm border border-gray-200 shadow-sm">
       {/* Upper row: logo + search + actions */}
-      <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div className="max-w-screen-xl mx-auto px-4 py-1 flex items-center gap-3">
         <Link to="/" className="items-center gap-0.5 flex-shrink-0">
-          <img src={log2Img} alt="E-Curuza logo" className="h-12 w-auto object-contain" />
+          <img src={log2Img} alt="E-Curuza logo" className="h-10 w-auto object-contain" />
         </Link>
 
         {/* Desktop search */}
