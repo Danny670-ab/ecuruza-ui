@@ -13,7 +13,7 @@ function App() {
   return (
     <Router>
       <Navbar />
-      <div className="pt-20">
+      <div className="pt-20 overflow-auto">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />

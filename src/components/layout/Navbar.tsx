@@ -130,7 +130,7 @@ const Navbar: React.FC = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white backdrop-blur-sm border border-gray-200 shadow-sm">
       {/* Upper row: logo + search + actions */}
-      <div className="max-w-screen-xl mx-auto px-4 py-1 flex items-center gap-3">
+      <div className=" mx-auto px-4 flex items-center gap-3">
         <Link to="/" className="items-center gap-0.5 flex-shrink-0">
           <img src={log2Img} alt="E-Curuza logo" className="h-10 w-auto object-contain" />
         </Link>
@@ -248,8 +248,8 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Lower row: desktop nav items */}
-      <div className="w-full border-t border-gray-200 bg-white/95">
-        <div className="max-w-screen-xl mx-auto px-4 h-12 flex items-center">
+      <div className="border-t border-gray-200 bg-white/95">
+        <div className="px-4 h-12 flex items-center">
           <div className="hidden md:flex items-center gap-4">
             {NAV_ITEM_KEYS.map((item) => (
               <Link key={item.href} to={item.href} className="inline-flex items-center justify-center h-9 px-3 text-sm font-medium rounded-md text-[#0C6227] hover:underline">
