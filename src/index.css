@@ -1,1 +1,30 @@
 @import "tailwindcss";
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 10s linear infinite;
+}
+
+/* Image Slider Styles */
+.slider-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.slider-wrapper {
+  display: flex;
+  transition: transform 1s ease-in-out;
+}
+
+.slider-slide {
+  min-width: 100%;
+  height: 420px;
+}

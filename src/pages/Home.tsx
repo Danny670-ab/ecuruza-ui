@@ -2,7 +2,7 @@ import Hero from '../components/Hero'
 
 function Home() {
   return (
-    <div className='flex'>
+    <div className='flex overflow-auto'>
         <Hero />
         <div className='flex text-black'>
           
