@@ -46,12 +46,12 @@ const LANGUAGES = [
   { code: 'fr', label: 'Français', flagUrl: 'https://flagcdn.com/w40/fr.png', emoji: '🇫🇷' },
   { code: 'kny', label: 'Kinyarwanda', flagUrl: 'https://flagcdn.com/w40/rw.png', emoji: '🇷🇼' },
 ] as const;
+
 type Lang = (typeof LANGUAGES)[number]['code'];
 
 function getLangObj(code: Lang) {
   return LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
 }
-
 const Navbar: React.FC = () => {
   const [open, setOpen] = useState(false); // mobile menu
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false); // mobile search panel
@@ -99,6 +99,7 @@ const Navbar: React.FC = () => {
       if (!langRef.current.contains(e.target as Node)) {
         setLangOpen(false);
       }
+     
     };
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
@@ -112,8 +113,7 @@ const Navbar: React.FC = () => {
   const onFlagError = (code: string) => {
     setFailedFlags((prev) => (prev.includes(code) ? prev : [...prev, code]));
   };
-
-  const currentLang = getLangObj(lang);
+ const currentLang = getLangObj(lang);
 
   // SEARCH
   const [search, setSearch] = useState('');
@@ -157,8 +157,10 @@ const Navbar: React.FC = () => {
           </form>
         </div>
 
-        {/* Actions: language, auth buttons, wishlist, mobile toggles */}
+        {/* Actions: language, location, auth buttons, wishlist, mobile toggles */}
         <div className="flex items-center gap-3">
+    
+
           <div className="relative" ref={langRef}>
             <button
               type="button"
@@ -202,11 +204,9 @@ const Navbar: React.FC = () => {
           <Link to="/login" className="hidden sm:inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-[#3F4E40] text-white">{t.login}</Link>
           <Link to="/seller-registration" className="hidden sm:inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-gray-100 text-[#0C6227]">{t.startSelling}</Link>
 
-          <Link to="/wishlist" title="Wishlist" className="hidden sm:inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-100">
-            <span className="relative inline-flex">
-              <img src={addcartImg} alt="Wishlist" className="w-8 h-8 bg-[#3F4E40] object-contain" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full ring-1 ring-white" />
-            </span>
+          <Link to="/wishlist" title="Wishlist" className="hidden sm:inline-flex h-9 px-4 text-sm font-medium border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold items-center gap-2">
+            <img src={addcartImg} alt="cart" className="w-5 h-5" />
+            Cart
           </Link>
 
           {/* Mobile search toggle */}
@@ -296,11 +296,9 @@ const Navbar: React.FC = () => {
       {open && (
         <div className="md:hidden absolute left-0 right-0 top-full z-50 bg-white border-t border-gray-200 shadow-md px-4 py-4">
           {/* Cart / Wishlist at top-right */}
-          <Link to="/wishlist" title="Wishlist" className="absolute right-4 top-3 p-1 rounded-md hover:bg-gray-100">
-            <span className="relative inline-flex">
-              <img src={addcartImg} alt="Wishlist" className="w-8 h-8 bg-[#3F4E40] object-contain" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full ring-1 ring-white" />
-            </span>
+          <Link to="/wishlist" title="Wishlist" className="absolute right-4 top-3 px-4 border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center gap-2">
+            <img src={addcartImg} alt="cart" className="w-6 h-6" />
+            Cart
           </Link>
 
           {/* Nav items */}
