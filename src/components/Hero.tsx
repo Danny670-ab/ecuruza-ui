@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { FaStar, FaMapMarkerAlt } from "react-icons/fa"
 import iphone from "../assets/iphone.png"
 import ball from "../assets/ball.png"
 import furniture from "../assets/furniture.png"
@@ -34,10 +35,10 @@ const slides: Slide[] = [
     image: iphone,
     category: "Electronics",
     title: "iPhone 15 Pro Max",
-    description: "Latest Apple smartphone with powerful performance hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhh.",
-    shopDescription: "Latest Apple smartphone with powerful performance hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhh.",
+    description: "Experience the latest Apple smartphone with powerful performance, advanced camera system, and stunning display.",
+    shopDescription: "Your trusted Apple dealer in Rwanda offering authentic products with warranty.",
     buttonText: "Visit Shop",
-    price: "1,099Rwf",
+    price: "1,099,000 Rwf",
     location: "Kigali",
     coverImage: caver,
     profileImage: Ellipse,
@@ -48,11 +49,11 @@ const slides: Slide[] = [
   {
     image: furniture,
     category: "Furniture",
-    title: "Modern Furniture",
-    description: "Elegant furniture to transform your home hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh.",
-    shopDescription: "Elegant furniture to transform your home hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh.",
+    title: "Modern Furniture Set",
+    description: "Elegant and contemporary furniture to transform your living space into a modern sanctuary.",
+    shopDescription: "Premium furniture designs for homes and offices at affordable prices.",
     buttonText: "Visit Shop",
-    price: "5998Rwf",
+    price: "599,000 Rwf",
     location: "Kigali",
     coverImage: first,
     profileImage: log1,
@@ -63,11 +64,11 @@ const slides: Slide[] = [
   {
     image: vegetable,
     category: "Vegetables",
-    title: "Fresh Vegetables",
-    description: "Organic and fresh vegetables directly from farms hhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhh.",
-    shopDescription: "Organic and fresh vegetables directly from farms hhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhkkkkkkkkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkhhbbjbjbjcb jb jfjbjbfbj bjbjb kkkkkkkkkkkkkk hbububdbvrhbvyhbdhb  uefbu buffffffffffffffffffff ffffffffffffffffffffffffffff fffffffffffffffffffffffff.",
+    title: "Fresh Organic Vegetables",
+    description: "Farm-fresh organic vegetables delivered directly to your doorstep. Healthy and nutritious.",
+    shopDescription: "Fresh produce from local farms. Quality guaranteed with same-day delivery.",
     buttonText: "Visit Shop",
-    price: "5000Rwf",
+    price: "5,000 Rwf",
     location: "Remera",
     coverImage: second,
     profileImage: curuza,
@@ -79,10 +80,10 @@ const slides: Slide[] = [
     image: ball,
     category: "Sports",
     title: "Premium Sports Ball",
-    description: "High-quality professional sports equipment.",
-    shopDescription: "High-quality professional sports equipment.",
+    description: "High-quality professional sports equipment for athletes and enthusiasts.",
+    shopDescription: "Top sports gear and equipment for all your athletic needs.",
     buttonText: "Visit Shop",
-    price: "4900Rwf",
+    price: "4,900 Rwf",
     location: "Kigali",
     coverImage: glo,
     profileImage: logo2,
@@ -95,33 +96,29 @@ const slides: Slide[] = [
 function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(true)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const getDescriptionFontSize = (text: string) => {
     const length = text.length
-    if (length > 200) return "text-[10px]"
-    if (length > 180) return "text-[11px]"
-    if (length > 160) return "text-[12px]"
-    if (length > 140) return "text-[13px]"
-    if (length > 120) return "text-sm"
-    if (length > 100) return "text-base"
-    return "text-lg"
+    if (length > 200) return "text-xs"
+    if (length > 180) return "text-sm"
+    if (length > 160) return "text-sm"
+    if (length > 140) return "text-base"
+    return "text-base"
   }
 
   const getShopDescriptionFontSize = (text: string) => {
     const length = text.length
-    if (length > 200) return "text-[10px]"
-    if (length > 180) return "text-[11px]"
-    if (length > 160) return "text-[12px]"
-    if (length > 140) return "text-[13px]"
-    if (length > 120) return "text-sm"
-    if (length > 100) return "text-base"
-    return "text-lg"
+    if (length > 200) return "text-xs"
+    if (length > 180) return "text-sm"
+    if (length > 160) return "text-sm"
+    if (length > 140) return "text-base"
+    return "text-base"
   }
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      setCurrentSlide((prev) => prev + 1)
+      setCurrentSlide((prev) => (prev + 1) % slides.length)
     }, 5000)
 
     return () => {
@@ -138,98 +135,100 @@ function Hero() {
   }
 
   return (
-    <div className="w-full mt-3 h-[450px] overflow-hidden">
+    <div className="w-full mt-3 h-[500px] overflow-hidden relative">
       <div
         className={`flex ${isTransitioning ? 'transition-transform duration-1000 ease-in-out' : ''}`}
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         onTransitionEnd={handleTransitionEnd}
       >
         {slides.map((slide, index) => (
-          <div key={index} className="w-full flex-shrink-0 h-[420px] flex items-start justify-start px-7 text-white">
+          <div key={index} className="w-full flex-shrink-0 h-[500px] flex items-start justify-start px-4 md:px-7 text-white">
             
-            <div className="flex justify-start relative">
+            {/* Image Section */}
+            <div className="flex justify-start relative w-full md:w-auto">
               <img
                 src={slide.image}
                 alt={slide.title}
-                className="h-[420px] w-[620px] bg-gray-200 object-cover"
+                className="h-[300px] md:h-[420px] w-full md:w-[500px] lg:w-[620px] bg-gray-200 object-cover"
               />
-              <span className="absolute top-4 right-4 bg-[#1976D2] text-white px-3 py-1 text-sm font-bold rounded-3xl">
+              <span className="absolute top-4 right-4 bg-[#1976D2] text-white px-3 py-1 text-xs md:text-sm font-bold rounded-full">
                 Sponsored
               </span>
-            
-           
             </div>
             
-            {/* Content - Middle - Split into two sections */}
-            <div className="h-[420px] w-full bg-[linear-gradient(80deg,_#0c2d1a_50%,_#1ca225_45%,_#3f4e40_70%)] flex">
+            {/* Content Section */}
+            <div className="h-[500px] w-full bg-gradient-to-r from-[#0c2d1a] via-[#1ca225] to-[#3f4e40] flex flex-col md:flex-row">
               {/* Left side - Product details */}
-              <div className="w-1/2 p-6 flex flex-col">
-                <span className="inline-block border border-white px-7 text-sm w-fit">
+              <div className="w-full md:w-1/2 p-4 md:p-6 flex flex-col relative">
+                <span className="inline-block border border-white px-4 md:px-7 text-sm w-fit">
                   {slide.category}
                 </span>
 
-                <h2 className="text-3xl mt-5 font-extrabold text-white">
+                <h2 className="text-2xl md:text-3xl mt-4 md:mt-5 font-extrabold text-white">
                   {slide.title}
                 </h2>
-                <div className="flex-1 overflow-hidden">
-                  <h1 className="text-[#0fbe46] font-bold mt-5 text-xl">Details</h1>
+                <div className="flex-1 overflow-hidden mt-2">
+                  <h1 className="text-[#0fbe46] font-bold mt-3 md:mt-5 text-lg md:text-xl">Details</h1>
                   <p className={`mt-2 text-white leading-relaxed ${getDescriptionFontSize(slide.description)}`}>
                     {slide.description}
                   </p>
-                  <p className="mt-15 text-white text-md w-40 flex place-items-baseline gap-2">
-                  <i className="fas fa-map-marker-alt text-[#18C85082]  text-3xl"></i>
-                  {slide.location} RWANDA
-                </p>
-                  <span className="absolute flex bottom-4  bg-[#3F4E40] text-[#11e257] border-[#07f051] px-4 text-lg font-bold rounded-3xl">
-                  {slide.price}
-                 </span>
-             
+                  <div className="flex items-center gap-2 mt-3 md:mt-4">
+                    <FaMapMarkerAlt className="text-[#18C850]" />
+                    <span className="text-white">{slide.location}, RWANDA</span>
+                  </div>
+                  <div className="mt-4">
+                    <span className="bg-[#3F4E40] text-[#11e257] border border-[#07f051] px-4 py-2 text-base md:text-lg font-bold rounded-full">
+                      {slide.price}
+                    </span>
+                  </div>
+              
                 </div>
-                <div className="flex items-center mt-4">
-                <button className=" ml-50 bottom-4 absolute w-28 justify-center border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center ">
-                  <img src={cart} alt="cart" className="w-8 h-8" />
-                  Cart
-                </button>
+                <div className="flex items-center mt-2">
+                  <button className="w-28 md:w-32 justify-center border border-[#07f051] bg-[#3F4E40] text-white rounded-full font-bold flex items-center gap-2 py-2">
+                    <img src={cart} alt="cart" className="w-5 h-5" />
+                    Cart
+                  </button>
                 </div>
               </div>
               
-              {/* Right side - Cover image and profile - Top right of gradient bg */}
-              <div className="w-1/2 relative">
-                <div className="absolute top-3 right-2 w-full">
+              {/* Right side - Shop details */}
+              <div className="w-full md:w-1/2 relative p-4 md:p-6 flex flex-col">
+                {/* Cover image */}
+                <div className="w-full">
                   <img
                     src={slide.coverImage}
                     alt={`Cover ${slide.shopName}`}
-                    className="h-[100px] w-[370px] object-cover rounded-t-3xl ml-auto"
+                    className="h-[80px] md:h-[100px] w-full object-cover rounded-t-xl md:rounded-t-3xl"
                   />
-                  <div className="absolute  right-5 flex gap-1 mt-1">
-                    <i className="fas fa-star text-yellow-400 text-[10px]"></i>
-                    <i className="fas fa-star text-yellow-400 text-[10px]"></i>
-                    <i className="fas fa-star text-yellow-400 text-[10px]"></i>
-                    <i className="fas fa-star text-yellow-400 text-[10px]"></i>
-                    <i className="fas fa-star text-yellow-400 text-[10px]"></i>
-                    <p className="text-white items-center flex text-[10px]">{slide.star}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[...Array(5)].map((_, i) => (
+                      <FaStar key={i} className="text-yellow-400 text-xs" />
+                    ))}
+                    <span className="text-white text-xs ml-1">{slide.star}</span>
                   </div>
-                  <p className="absolute right-5 flex mt-4 text-white text-xs">{slide.views} Views</p>
+                  <p className="text-white text-xs mt-1">{slide.views} Views</p>
                 </div>
-                <div className="absolute top-12 left-20 transform -translate-x- flex flex-col">
+
+                {/* Profile and shop info */}
+                <div className="mt-4 md:mt-6 flex flex-col">
                   <img
                     src={slide.profileImage}
                     alt={`Profile ${slide.shopName}`}
-                    className="h-[98px] w-[98px] rounded-full border-4 border-white object-cover"
+                    className="h-[70px] w-[70px] md:h-[98px] md:w-[98px] rounded-full border-4 border-white object-cover -mt-8 md:-mt-10"
                   />
-              
-                  <p className="text-[#1CA225] font-bold text-3xl mt-2 ">{slide.shopName}</p>
-                 
-                  <p className="mt-5 text-white text-md w-40 flex place-items-baseline gap-2">
-                  <i className="fas fa-map-marker-alt text-[#18C85082] text-3xl"></i>
-                  {slide.location}/ RWANDA
-                </p>
-                  <h1 className="text-[#1CA225] mt-5 text-xl font-bold">About Shop</h1>
-                  <p className={`text-white mt-1 ${getShopDescriptionFontSize(slide.shopDescription)}`}>{slide.shopDescription}</p>
-                 
-                </div>
-                <div className="mt-90 ml-30">
-                   <button className="absolute bottom-4 right-4 px-6 border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center">
+               
+                  <p className="text-[#1CA225] font-bold text-xl md:text-3xl mt-2">{slide.shopName}</p>
+                  
+                  <div className="flex items-center gap-2 mt-2">
+                    <FaMapMarkerAlt className="text-[#18C85082] text-lg" />
+                    <span className="text-white">{slide.location}, RWANDA</span>
+                  </div>
+                  <h1 className="text-[#1CA225] mt-4 text-lg md:text-xl font-bold">About Shop</h1>
+                  <p className={`text-white mt-1 ${getShopDescriptionFontSize(slide.shopDescription)}`}>
+                    {slide.shopDescription}
+                  </p>
+                  
+                  <button className="mt-4 md:mt-auto px-6 py-2 border border-[#07f051] bg-[#3F4E40] text-white rounded-full font-bold flex items-center justify-center self-start">
                     {slide.buttonText}
                   </button>
                 </div>
@@ -238,10 +237,21 @@ function Hero() {
           </div>
         ))}
       </div>
+
+      {/* Navigation dots */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+        {slides.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentSlide(index)}
+            className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all ${
+              currentSlide === index ? 'bg-[#1CA225] w-6 md:w-8' : 'bg-white/50'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   )
 }
 
 export default Hero
-
-
