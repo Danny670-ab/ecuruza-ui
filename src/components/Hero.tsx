@@ -12,6 +12,7 @@ import second from "../assets/second.jpg"
 import glo from "../assets/glo.png"
 import logo2 from "../assets/logo2.png"
 import curuza from "../assets/curuza.png"
+import bg_bunner from "../assets/bg_banner.png"
 
 interface Slide {
   image: string
@@ -155,16 +156,14 @@ function Hero() {
               />
               <span className="absolute top-4 right-4 bg-[#1976D2] text-white px-3 py-1 text-sm font-bold rounded-3xl">
                 Sponsored
-              </span>
-            
-           
+              </span>        
             </div>
             
             {/* Content - Middle - Split into two sections */}
-            <div className="h-[420px] w-full bg-[linear-gradient(80deg,_#0c2d1a_50%,_#1ca225_45%,_#3f4e40_70%)] flex">
+            <div className="h-[420px] w-full flex bg-cover bg-center" style={{ backgroundImage: `url(${bg_bunner})` }}>
               {/* Left side - Product details */}
               <div className="w-1/2 p-6 flex flex-col">
-                <span className="inline-block border border-white px-7 text-sm w-fit">
+                <span className="inline-block font-bold border-white px-7 border-[3px] rounded-[7px] text-sm w-fit">
                   {slide.category}
                 </span>
 
@@ -172,7 +171,7 @@ function Hero() {
                   {slide.title}
                 </h2>
                 <div className="flex-1 overflow-hidden">
-                  <h1 className="text-[#0fbe46] font-bold mt-5 text-xl">Details</h1>
+                  <h1 className="text-[#18C850] font-bold mt-5 text-xl">Details</h1>
                   <p className={`mt-2 text-white leading-relaxed ${getDescriptionFontSize(slide.description)}`}>
                     {slide.description}
                   </p>
@@ -180,15 +179,15 @@ function Hero() {
                   <i className="fas fa-map-marker-alt text-[#18C85082]  text-3xl"></i>
                   {slide.location} RWANDA
                 </p>
-                  <span className="absolute flex bottom-4  bg-[#3F4E40] text-[#11e257] border-[#07f051] px-4 text-lg font-bold rounded-3xl">
+                  <span className="absolute flex bottom-4  bg-[#3F4E40] text-white border-[#07f051] px-4 text-lg font-bold rounded-3xl">
                   {slide.price}
                  </span>
              
                 </div>
                 <div className="flex items-center mt-4">
-                <button className=" ml-50 bottom-4 absolute w-28 justify-center border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center ">
+                <button className=" ml-50 bottom-4 absolute w-40 text-sm justify-center border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center ">
                   <img src={cart} alt="cart" className="w-8 h-8" />
-                  Cart
+                 Add To Cart
                 </button>
                 </div>
               </div>
