@@ -76,7 +76,8 @@ const Navbar: React.FC = () => {
         setMobileSearchOpen(false);
       });
     }
-  }, [location.pathname]);
+  }, 
+  [location.pathname]);
 
   // prevent scrolling when panels are open
   useEffect(() => {
@@ -130,8 +131,8 @@ const Navbar: React.FC = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white backdrop-blur-sm border border-gray-200 shadow-sm">
       {/* Upper row: logo + search + actions */}
-      <div className=" mx-auto px-4 flex items-center gap-3">
-        <Link to="/" className="items-center gap-0.5 flex-shrink-0">
+      <div className=" mx-auto px-6 flex items-center gap-3">
+        <Link to="/" className="items-center gap-0.5 shrink-0">
           <img src={log2Img} alt="E-Curuza logo" className="h-10 w-auto object-contain" />
         </Link>
 
@@ -204,7 +205,7 @@ const Navbar: React.FC = () => {
           <Link to="/login" className="hidden sm:inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-[#3F4E40] text-white">{t.login}</Link>
           <Link to="/seller-registration" className="hidden sm:inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-gray-100 text-[#0C6227]">{t.startSelling}</Link>
 
-          <Link to="/wishlist" title="Wishlist" className="hidden sm:inline-flex h-9 px-4 text-sm font-medium border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold items-center gap-2">
+          <Link to="/wishlist" title="Wishlist" className="hidden sm:inline-flex h-9 px-4 text-sm font-bold border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl items-center gap-2">
             <img src={addcartImg} alt="cart" className="w-5 h-5" />
             Cart
           </Link>

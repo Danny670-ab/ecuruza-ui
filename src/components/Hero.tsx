@@ -139,28 +139,36 @@ function Hero() {
   }
 
   return (
-    <div className="w-full mt-3 h-[450px] overflow-hidden">
+    <div className="w-full mt-3 h-105 overflow-hidden">
       <div
         className={`flex ${isTransitioning ? 'transition-transform duration-1000 ease-in-out' : ''}`}
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         onTransitionEnd={handleTransitionEnd}
       >
         {slides.map((slide, index) => (
-          <div key={index} className="w-full flex-shrink-0 h-[420px] flex items-start justify-start px-7 text-white">
+          <div key={index} className="w-full shrink-0 h-105 flex items-start justify-start px-7 text-white">
             
             <div className="flex justify-start relative">
               <img
                 src={slide.image}
                 alt={slide.title}
-                className="h-[420px] w-[620px] bg-gray-200 object-cover"
+                className="h-105 w-155 bg-gray-200  object-cover"
               />
-              <span className="absolute top-4 right-4 bg-[#1976D2] text-white px-3 py-1 text-sm font-bold rounded-3xl">
-                Sponsored
-              </span>        
+              <button className="sponsored-badge absolute top-4 right-4 bg-[#1976D2] text-white px-3 py-1 text-sm font-bold rounded-3xl">
+                {"Sponsored".split("").map((letter, index) => (
+                  <span
+                    key={index}
+                    className="sponsored-letter"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    {letter}
+                  </span>
+                ))}
+              </button>        
             </div>
             
             {/* Content - Middle - Split into two sections */}
-            <div className="h-[420px] w-full flex bg-cover bg-center" style={{ backgroundImage: `url(${bg_bunner})` }}>
+            <div className=" h-105 w-full flex bg-cover bg-center" style={{ backgroundImage: `url(${bg_bunner})` }}>
               {/* Left side - Product details */}
               <div className="w-1/2 p-6 flex flex-col">
                 <span className="inline-block font-bold border-white px-7 border-[3px] rounded-[7px] text-sm w-fit">
@@ -175,9 +183,9 @@ function Hero() {
                   <p className={`mt-2 text-white leading-relaxed ${getDescriptionFontSize(slide.description)}`}>
                     {slide.description}
                   </p>
-                  <p className="mt-15 text-white text-md w-40 flex place-items-baseline gap-2">
-                  <i className="fas fa-map-marker-alt text-[#18C85082]  text-3xl"></i>
-                  {slide.location} RWANDA
+                  <p className="mt-15 text-white text-md ml-2 w-40 flex place-items-baseline gap-2">
+                  <i className="fas fa-map-marker-alt text-[#18C85082]  text-3xl location-icon"></i>
+                  {slide.location}/RWANDA
                 </p>
                   <span className="absolute flex bottom-4  bg-[#3F4E40] text-white border-[#07f051] px-4 text-lg font-bold rounded-3xl">
                   {slide.price}
@@ -185,9 +193,17 @@ function Hero() {
              
                 </div>
                 <div className="flex items-center mt-4">
-                <button className=" ml-50 bottom-4 absolute w-40 text-sm justify-center border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center ">
+                <button className=" ml-50 bottom-4 absolute w-33 text-sm justify-center border  border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center hover:bg-[#27bb56] hover:text-[#3F4E40] transition-colors duration-300">
                   <img src={cart} alt="cart" className="w-8 h-8" />
-                 Add To Cart
+                  {"Add To Cart".split("").map((letter, index) => (
+                    <span
+                      key={index}
+                      className="sponsored-letter"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      {letter}
+                    </span>
+                  ))}
                 </button>
                 </div>
               </div>
@@ -198,7 +214,7 @@ function Hero() {
                   <img
                     src={slide.coverImage}
                     alt={`Cover ${slide.shopName}`}
-                    className="h-[100px] w-[370px] object-cover rounded-t-3xl ml-auto"
+                    className="h-25 w-92.5 object-cover rounded-t-3xl ml-auto"
                   />
                   <div className="absolute  right-5 flex gap-1 mt-1">
                     <i className="fas fa-star text-yellow-400 text-[10px]"></i>
@@ -211,24 +227,26 @@ function Hero() {
                   <p className="absolute right-5 flex mt-4 text-white text-xs">{slide.views} Views</p>
                 </div>
                 <div className="absolute top-12 left-20 transform -translate-x- flex flex-col">
-                  <img
-                    src={slide.profileImage}
-                    alt={`Profile ${slide.shopName}`}
-                    className="h-[98px] w-[98px] rounded-full border-4 border-white object-cover"
-                  />
+                  <div className="profile-border-container">
+                    <img
+                      src={slide.profileImage}
+                      alt={`Profile ${slide.shopName}`}
+                      className="h-20 w-20 object-cover rounded-full"
+                    />
+                  </div>
               
                   <p className="text-[#1CA225] font-bold text-3xl mt-2 ">{slide.shopName}</p>
                  
                   <p className="mt-5 text-white text-md w-40 flex place-items-baseline gap-2">
-                  <i className="fas fa-map-marker-alt text-[#18C85082] text-3xl"></i>
-                  {slide.location}/ RWANDA
+                  <i className="fas fa-map-marker-alt text-[#18C85082] text-3xl location-icon"></i>
+                  {slide.location}/RWANDA
                 </p>
                   <h1 className="text-[#1CA225] mt-5 text-xl font-bold">About Shop</h1>
-                  <p className={`text-white mt-1 ${getShopDescriptionFontSize(slide.shopDescription)}`}>{slide.shopDescription}</p>
+                  <p className={`text-white mt-1 text-semibold ${getShopDescriptionFontSize(slide.shopDescription)}`}>{slide.shopDescription}</p>
                  
                 </div>
                 <div className="mt-90 ml-30">
-                   <button className="absolute bottom-4 right-4 px-6 border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center">
+                   <button className="absolute bottom-4 right-4 px-3 border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold flex items-center hover:bg-[#27bb56]">
                     {slide.buttonText}
                   </button>
                 </div>
