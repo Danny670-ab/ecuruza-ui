@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { login } from '../../redux/services/login'
+import { setAuthToken } from '../../redux/axiosConfig'
+import { Link, useNavigate } from 'react-router-dom'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     // lock body scroll while Login is mounted
@@ -16,19 +21,44 @@ const Login: React.FC = () => {
     }
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log({ email, password, remember })
+    setError(null)
+    setLoading(true)
+    try {
+      const resp = await login({ email, password })
+      // expected response shape: { token?: string, user?: {...} }
+      const token = resp?.token ?? resp?.accessToken ?? null
+      if (token) {
+        // persist token only when remember is true
+        setAuthToken(token, remember)
+      }
+      // redirect after successful login
+      navigate('/')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      console.error('login error', err)
+      const msg = err?.response?.data?.message || err?.message || 'Login failed'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full h-[500px] max-w-md bg-[#F2EEEE] border border-gray-200 rounded-2xl shadow-xl p-5">
+      <div className="w-full h-125 max-w-md bg-[#F2EEEE] border border-gray-200 rounded-2xl shadow-xl p-5">
         <h1 className="text-2xl mt-10 font-bold text-[#0C6227] text-center">Welcome Back!</h1>
         <p className="text-sm text-black text-center mt-2">Please login to your account</p>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-3">
-          <label className="block relative items-center justify-center flex">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-3  items-center justify-center" >
+          {error && (
+            <div className="text-center mb-2">
+              <p className="text-xs text-red-600">{error}</p>
+            </div>
+          )}
+
+          <label className="flex relative items-center justify-center ">
             <span className="absolute left-14 top-1/2 -translate-y-1/2 text-gray-400">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 8.5v7A2.5 2.5 0 0 0 5.5 18h13A2.5 2.5 0 0 0 21 15.5v-7M3 8.5l9 6 9-6" />
@@ -40,12 +70,12 @@ const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email or Phone number"
-              className="w-[316px] pl-10 pr-3 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+              className="w-79 pl-10 pr-3 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
               aria-label="Email or Phone number"
             />
           </label>
 
-          <label className="block relative items-center justify-center flex">
+          <label className="flex relative items-center justify-center ">
             <span className="absolute left-14 top-1/2 -translate-y-1/2 text-gray-400">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M12 15v2M6 10V8a6 6 0 0 1 12 0v2" />
@@ -58,7 +88,7 @@ const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-[316px] pl-10 pr-10 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+              className=" w-79  pl-10 pr-10 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
               aria-label="Password"
             />
 
@@ -103,9 +133,10 @@ const Login: React.FC = () => {
           <div className='items-center justify-center flex'>
             <button
               type="submit"
-              className="mt-2 w-[316px] bg-[#3F4E40] text-white py-2 rounded-full text-base font-medium shadow"
+              className="mt-2 w-79 bg-[#3F4E40] text-white py-2 rounded-full text-base font-medium shadow"
+              disabled={loading}
             >
-              Login
+              {loading ? 'Logging...' : 'Login'}
             </button>
           </div>
 
@@ -118,7 +149,7 @@ const Login: React.FC = () => {
           <div className='flex items-center justify-center'>
             <button
               type="button"
-              className="w-[316px] bg-white text-black py-2 rounded-md text-sm font-medium shadow flex items-center justify-center gap-3"
+              className="w-79 bg-white text-black py-2 rounded-md text-sm font-medium shadow flex items-center justify-center gap-3"
               onClick={() => console.log('Google login')}
             >
               <svg className="w-5 h-5" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

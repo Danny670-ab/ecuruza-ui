@@ -14,7 +14,7 @@ const ForgotPassword: React.FC = () => {
 
   return (
     <div className="flex h-full  bg-gray-5 items-center justify-center px-4">
-      <div className="mt-10 w-[400px] mt-30 max-w-md bg-[#F2EEEE] border border-gray-200 rounded-[25px]  shadow-xl p-6">
+      <div className=" w-100 mt-30 max-w-md bg-[#F2EEEE] border border-gray-200 rounded-[25px]  shadow-xl p-6">
         <h1 className="text-2xl mt-10 font-semibold text-[#0C6227] text-center">Forgot Password</h1>
         <p className="text-sm text-black text-center mt-2">
           Enter your Email or Phone number
@@ -36,7 +36,7 @@ const ForgotPassword: React.FC = () => {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="Email or Phone number"
-                className="w-[316px] pl-11 pr-3 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                className="w-79 pl-11 pr-3 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 aria-label="Email or Phone number"
               />
             </div>
@@ -44,7 +44,7 @@ const ForgotPassword: React.FC = () => {
           <div className='flex items-center justify-center'>
             <button
             type="submit"
-            className="mt-2 w-[316px] mb-10 bg-[#3F4E40] text-white py-3 rounded-md text-lg font-medium shadow flex items-center justify-center gap-2"
+            className="mt-2 w-79 mb-10 bg-[#3F4E40] text-white py-3 rounded-md text-lg font-medium shadow flex items-center justify-center gap-2"
           >
             forgot password
             <span className="p-1 rounded-full bg-white/10">

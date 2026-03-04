@@ -5,9 +5,11 @@ import ForgotPassword from './components/Authantications/ForgotPassword';
 import ResetPassword from './components/Authantications/ResetPassword';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
-import VerifyCode from './components/Authantications/VerfyCode';
+import Category from './pages/Category';
+import VerifyCode from './components/Authantications/VerfyEmail';
 import SignUp from './components/Authantications/SignUp';
 import SellerRegistration from './components/Authantications/SellerRegistration';
+import ResendEmail from './components/Authantications/ResendEmail';
 
 function App() {
   return (
@@ -17,10 +19,12 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
+          <Route path="/category" element={<Category />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify" element={<VerifyCode />} />
+          <Route path="/resend-email" element={<ResendEmail />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/seller-registration" element={<SellerRegistration />} />
         </Routes>
