@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { registerUser } from '../../redux/services/signup';
 import { Link, useNavigate } from 'react-router-dom';
 
 const SignUp: React.FC = () => {
@@ -46,27 +47,52 @@ const SignUp: React.FC = () => {
     ev?.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    // TODO: replace with real sign up API call
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    console.log({ firstName, lastName, email, phone });
-    navigate('/verify');
+    setErrors({});
+
+    try {
+      const data = await registerUser({
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        role: 'CUSTOMER',
+      });
+
+      // Assume success when no error thrown
+      console.log('Registration successful:', data);
+      navigate('/verify');
+    } catch (error: unknown) {
+      console.error('Registration error:', error);
+      const err = error as { response?: { data?: { errors?: Record<string, string>; message?: string } } };
+      const resp = err.response?.data;
+      if (resp?.errors) setErrors(resp.errors);
+      else if (resp?.message) setErrors({ general: resp.message });
+      else setErrors({ general: 'Registration failed. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f6f3f3] px-4 py-8">
-      <div className="w-[488px] max-w-md rounded-2xl bg-[#F2EEEE] shadow-md p-5">
+      <div className="w-122 max-w-md rounded-2xl bg-[#F2EEEE] shadow-md p-5">
         <h1 className="text-xl text-center text-[#0C6227] font-bold mb-1">Sign Up</h1>
         <p className="text-sm text-center text-black mb-4">Create your account</p>
 
         <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+          {errors.general && (
+            <div className="flex items-center justify-center">
+              <p className="text-xs text-red-600 text-center bg-red-50 p-2 rounded">{errors.general}</p>
+            </div>
+          )}
           <div className="flex items-center justify-center">
             <input
               aria-label="First name"
               placeholder="First Name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="w-[316px] bg-white px-3 py-2 rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
+              className="w-79 bg-white px-3 py-2 rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
             />
           </div>
           {errors.firstName && <p className="mt-1 text-xs text-red-600 text-center">{errors.firstName}</p>}
@@ -77,7 +103,7 @@ const SignUp: React.FC = () => {
               placeholder="Last Name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="w-[316px] px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
+              className="w-79 px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
             />
           </div>
           {errors.lastName && <p className="mt-1 text-xs text-red-600 text-center">{errors.lastName}</p>}
@@ -89,7 +115,7 @@ const SignUp: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-[316px] px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
+              className="w-79 px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
             />
           </div>
           {errors.email && <p className="mt-1 text-xs text-red-600 text-center">{errors.email}</p>}
@@ -101,7 +127,7 @@ const SignUp: React.FC = () => {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-[316px] px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
+              className="w-79 px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
             />
           </div>
           {errors.phone && <p className="mt-1 text-xs text-red-600 text-center">{errors.phone}</p>}
@@ -113,7 +139,7 @@ const SignUp: React.FC = () => {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-[316px] px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
+              className="w-79 px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
             />
             <button
               type="button"
@@ -133,7 +159,7 @@ const SignUp: React.FC = () => {
               type={showConfirm ? 'text' : 'password'}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-[316px] px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
+              className="w-79 px-3 py-2 bg-white rounded-md shadow-sm border border-gray-200 focus:outline-none text-sm"
             />
             <button
               type="button"
@@ -149,7 +175,7 @@ const SignUp: React.FC = () => {
           <div className="flex items-center justify-center">
             <button
               type="submit"
-              className={`w-[316px] py-2 rounded-full text-sm font-medium ${isFormFilled && !loading ? 'bg-[#3F4E40] text-white' : ' bg-[#5a695b] text-gray-200 cursor-not-allowed'}`}
+              className={`w-79 py-2 rounded-full text-sm font-medium ${isFormFilled && !loading ? 'bg-[#3F4E40] text-white' : ' bg-[#5a695b] text-gray-200 cursor-not-allowed'}`}
               disabled={!isFormFilled || loading}
             >
               {loading ? 'Signing...' : 'Sign Up'}
@@ -165,7 +191,7 @@ const SignUp: React.FC = () => {
           <div className="flex items-center justify-center">
             <button
               type="button"
-              className="w-[316px] py-2 bg-white border border-gray-200 rounded-full flex items-center justify-center gap-3 text-sm"
+              className="w-79 py-2 bg-white border border-gray-200 rounded-full flex items-center justify-center gap-3 text-sm"
               onClick={() => console.log('Google signup')}
             >
               <svg className="w-4 h-4" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg" aria-hidden>

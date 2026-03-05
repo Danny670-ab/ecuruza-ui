@@ -11,6 +11,7 @@ const SellerRegistration = () => {
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const isFormFilled = useMemo(() => {
@@ -21,9 +22,10 @@ const SellerRegistration = () => {
       phone.trim() !== '' &&
       password.length >= 6 &&
       confirm.length > 0 &&
-      password === confirm
+      password === confirm &&
+      acceptTerms
     );
-  }, [firstName, businessName, email, phone, password, confirm]);
+  }, [firstName, businessName, email, phone, password, confirm, acceptTerms]);
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
@@ -36,6 +38,7 @@ const SellerRegistration = () => {
     else if (password.length < 6) e.password = 'Minimum 6 characters';
     if (!confirm) e.confirm = 'Please confirm password';
     else if (password !== confirm) e.confirm = 'Passwords do not match';
+    if (!acceptTerms) e.acceptTerms = 'You must accept the terms and conditions';
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -53,7 +56,7 @@ const SellerRegistration = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f6f3f3] px-4 py-8">
-      <div className="w-[488px] max-w-md rounded-2xl bg-[#F2EEEE] shadow-md p-5">
+      <div className="w-122 max-w-md rounded-2xl bg-[#F2EEEE] shadow-md p-5">
         <h1 className="text-xl text-center mt-4 mb-6 text-[#0C6227] font-bold">Seller Registration</h1>
 
         <form onSubmit={handleSubmit} className="space-y-3 relative items-center justify-center " noValidate>
@@ -62,7 +65,7 @@ const SellerRegistration = () => {
             placeholder="Full Name"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+            className="w-79 ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
           />
           {errors.firstName && <p className="text-xs text-red-600">{errors.firstName}</p>}
 
@@ -70,7 +73,7 @@ const SellerRegistration = () => {
             placeholder="Business Name"
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
-            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+            className="w-79 ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
           />
           {errors.businessName && <p className="text-xs text-red-600">{errors.businessName}</p>}
 
@@ -79,7 +82,7 @@ const SellerRegistration = () => {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+            className="w-79 ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
           />
           {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
 
@@ -88,7 +91,7 @@ const SellerRegistration = () => {
             placeholder="Phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+            className="w-79 ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
           />
           {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
 
@@ -98,7 +101,7 @@ const SellerRegistration = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+            className="w-79 ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
             />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-16 top-2 text-xs">
               {showPassword ? 'Hide' : 'Show'}
@@ -112,7 +115,7 @@ const SellerRegistration = () => {
               placeholder="Confirm Password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-            className="w-[316px] ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+            className="w-79 ml-10 pl-10 pr-3 py-2 justify-center items-center flex rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
             />
             <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-16 top-2 text-xs">
               {showConfirm ? 'Hide' : 'Show'}
@@ -120,10 +123,24 @@ const SellerRegistration = () => {
           </div>
           {errors.confirm && <p className="text-xs text-red-600">{errors.confirm}</p>}
 
+          <div className="flex items-center ml-23 mt-5 gap-2">
+            <input
+              type="checkbox"
+              id="terms"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              className="w-4 h-4 accent-[#0C6227]"
+            />
+            <label htmlFor="terms" className="text-xs text-gray-600">
+              I agree to the <a href="#" className="text-green-700 underline">Terms and Conditions</a>
+            </label>
+          </div>
+          {errors.acceptTerms && <p className="text-xs text-red-600 ml-10">{errors.acceptTerms}</p>}
+
           <button
             type="submit"
             disabled={!isFormFilled || loading}
-            className={`w-[316px] ml-10 py-2 rounded-full ${isFormFilled ? 'bg-[#3F4E40] text-white' : 'bg-[#5a695b] text-gray-200 cursor-not-allowed'}`}
+            className={`w-79 mt-2 ml-10 py-2 rounded-2xl ${isFormFilled ? 'bg-[#3F4E40] text-white' : 'bg-[#5a695b] text-gray-200 cursor-not-allowed'}`}
           >
             {loading ? 'Creating...' : 'Create Account'}
           </button>

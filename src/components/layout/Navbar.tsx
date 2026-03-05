@@ -8,8 +8,11 @@ type NavItemKey = { href: string; key: string; special?: boolean };
 const NAV_ITEM_KEYS: NavItemKey[] = [
   { href: '/', key: 'home' },
   { href: '/category', key: 'category' },
+  { href: '/about', key: 'about' },
   { href: '/shop', key: 'shop' },
   { href: '/wishlist', key: 'wishList' },
+  { href: '/stores', key: 'stores' },
+  
 ];
 
 const TRANSLATIONS: Record<
@@ -22,13 +25,13 @@ const TRANSLATIONS: Record<
   }
 > = {
   en: {
-    nav: { home: 'Home', category: 'Category', shop: 'Shop', wishList: 'WishList' },
+    nav: { home: 'Home', category: 'Category', about: 'About', shop: 'Shop', wishList: 'WishList', stores:'Stores'},
     login: 'Login',
     signup: 'Sign up',
     startSelling: 'Start Selling',
   },
   fr: {
-    nav: { home: 'Accueil', category: 'Catégorie', shop: 'Boutique', wishList: 'Liste de souhaits' },
+    nav: { home: 'Accueil', category: 'Catégorie', about: 'À propos', shop: 'Boutique', wishList: 'Liste de souhaits', stores: 'Magasins' },
     login: 'Connexion',
     signup: "S'inscrire",
     startSelling: 'Vendre',
@@ -76,7 +79,8 @@ const Navbar: React.FC = () => {
         setMobileSearchOpen(false);
       });
     }
-  }, [location.pathname]);
+  }, 
+  [location.pathname]);
 
   // prevent scrolling when panels are open
   useEffect(() => {
@@ -130,16 +134,16 @@ const Navbar: React.FC = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white backdrop-blur-sm border border-gray-200 shadow-sm">
       {/* Upper row: logo + search + actions */}
-      <div className=" mx-auto px-4 flex items-center gap-3">
-        <Link to="/" className="items-center gap-0.5 flex-shrink-0">
-          <img src={log2Img} alt="E-Curuza logo" className="h-10 w-auto object-contain" />
+      <div className="max-w-screen-2xl mx-auto px-6 flex items-center gap-3">
+        <Link to="/" className="items-center gap-0.5 shrink-0">
+          <img src={log2Img} alt="E-Curuza logo" className="h-12 w-auto object-contain" />
         </Link>
 
         {/* Desktop search */}
-        <div className="flex-1 left-0 hidden md:flex items-center">
+        <div className="flex-1 hidden md:flex items-center">
           <form onSubmit={handleSearch} className="w-full max-w-2xl">
             <label htmlFor="nav-search" className="sr-only">Search</label>
-            <div className="relative ml-20">
+            <div className="relative">
               <input
                 id="nav-search"
                 type="search"
@@ -204,7 +208,7 @@ const Navbar: React.FC = () => {
           <Link to="/login" className="hidden sm:inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-[#3F4E40] text-white">{t.login}</Link>
           <Link to="/seller-registration" className="hidden sm:inline-flex items-center justify-center h-9 px-4 text-sm font-medium rounded-md bg-gray-100 text-[#0C6227]">{t.startSelling}</Link>
 
-          <Link to="/wishlist" title="Wishlist" className="hidden sm:inline-flex h-9 px-4 text-sm font-medium border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl font-bold items-center gap-2">
+          <Link to="/wishlist" title="Wishlist" className="hidden sm:inline-flex h-9 px-4 text-sm font-bold border border-[#07f051] bg-[#3F4E40] text-white rounded-3xl items-center gap-2">
             <img src={addcartImg} alt="cart" className="w-5 h-5" />
             Cart
           </Link>
@@ -248,8 +252,8 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Lower row: desktop nav items */}
-      <div className="border-t border-gray-200 bg-white/95">
-        <div className="px-4 h-12 flex items-center">
+      <div className="border-t border-gray-200 ">
+        <div className="max-w-screen-2xl mx-auto px-6 h-12 flex items-center">
           <div className="hidden md:flex items-center gap-4">
             {NAV_ITEM_KEYS.map((item) => (
               <Link key={item.href} to={item.href} className="inline-flex items-center justify-center h-9 px-3 text-sm font-medium rounded-md text-[#0C6227] hover:underline">
