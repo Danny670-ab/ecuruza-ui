@@ -59,7 +59,7 @@ function Home() {
       {/* Categories Section - One Row with horizontal scroll */}
       <div className="max-w-screen-2xl mx-auto px-4 py-1">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl px-4 font-bold text-black">All Categories</h2>
+          <h2 className="text-2xl px-2 font-bold text-black">All Categories</h2>
        
         </div>
         

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface Category {
@@ -92,6 +92,74 @@ const Category: React.FC = () => {
   const initialCategory = catId ? (parseInt(catId, 10) || 1) : 1;
   
   const [selectedCategory, setSelectedCategory] = useState<number>(initialCategory);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
+
+  // Mobile panel ref and measured height so the backdrop can match the panel's height
+  const mobilePanelRef = useRef<HTMLDivElement | null>(null);
+  const [mobilePanelHeight, setMobilePanelHeight] = useState<number | null>(null);
+
+  // Anchor for desktop fixed sidebar and its measured offsets
+  const anchorRef = useRef<HTMLDivElement | null>(null);
+  const [leftOffset, setLeftOffset] = useState<number>(0);
+  const [topOffset, setTopOffset] = useState<number>(0);
+
+  
+
+  // Measure the mobile panel height when it opens and on resize so the backdrop height
+  // can be set to the same value (mobile-only effect)
+  useEffect(() => {
+    if (!mobileSidebarOpen) {
+      // Defer clearing state to avoid sync setState inside effect
+      const clearId = window.setTimeout(() => setMobilePanelHeight(null), 0);
+      return () => window.clearTimeout(clearId);
+    }
+
+    const measure = () => {
+      if (mobilePanelRef.current) {
+        // Use getBoundingClientRect to get the rendered height
+        const h = mobilePanelRef.current.getBoundingClientRect().height;
+        setMobilePanelHeight(h);
+      }
+    };
+
+    // Measure after the panel has been painted
+    const id = window.setTimeout(measure, 0);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener('resize', measure);
+    };
+  }, [mobileSidebarOpen]);
+
+  // Measure anchor position for the fixed desktop sidebar. Runs on mount and resize.
+  useEffect(() => {
+    const update = () => {
+      if (anchorRef.current) {
+        const rect = anchorRef.current.getBoundingClientRect();
+        // Defer state updates slightly to avoid sync setState-in-effect warnings
+        const id = window.setTimeout(() => {
+          setLeftOffset(rect.left);
+          setTopOffset(rect.top);
+        }, 0);
+        return () => window.clearTimeout(id);
+      }
+    };
+
+    // Do initial measurement
+    const initialId = window.setTimeout(() => {
+      if (anchorRef.current) {
+        const rect = anchorRef.current.getBoundingClientRect();
+        setLeftOffset(rect.left);
+        setTopOffset(rect.top);
+      }
+    }, 0);
+
+    window.addEventListener('resize', update);
+    return () => {
+      window.clearTimeout(initialId);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
 
   const currentCategory = categories.find(c => c.id === selectedCategory);
   
@@ -99,24 +167,42 @@ const Category: React.FC = () => {
 
   const handleCategoryClick = (categoryId: number) => {
     setSelectedCategory(categoryId);
+    // close mobile sidebar if open
+    setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-screen-2xl mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col  lg:flex-row gap-8">
           {/* Sidebar - Categories */}
           <aside className="w-full lg:w-72 shrink-0">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-4" style={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
+            {/* Desktop: placeholder anchor for the fixed sidebar (keeps layout intact) */}
+            <div ref={anchorRef} className="w-full hidden lg:block mt-5" />
+
+            {/* Mobile placeholder: space preserved for mobile flow */}
+            <div className="w-full lg:hidden mt-5" />
+          </aside>
+
+          {/* Desktop fixed sidebar (aligned to placeholder) */}
+          <div className="hidden lg:block" aria-hidden>
+            <div
+              style={{
+                position: 'fixed',
+                top: topOffset,
+                left: leftOffset,
+                width: 288, // 18rem (lg:w-72)
+                maxHeight: '80vh'
+              }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col"
+            >
               <div className="p-4 border-b border-gray-200 bg-white">
-                <h2 className="font-semibold text-lg text-gray-800">All Categories For You</h2>
+                <h2 className="font-bold text-xl text-[#0C6227]">All Categories For You</h2>
               </div>
-              <div className="p-2">
+              <div className="p-2 overflow-y-auto" style={{ flex: '1 1 auto' }}>
                 {categories.map((category) => (
-                  <div 
-                    key={category.id}
-                  >
+                  <div key={category.id}>
                     <button
                       onClick={() => handleCategoryClick(category.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
@@ -131,18 +217,63 @@ const Category: React.FC = () => {
                 ))}
               </div>
             </div>
-          </aside>
+          </div>
 
-          {/* Main Content - Products */}
-          <main className="flex-1" style={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
+          {/* Mobile overlay sidebar (small screens only) */}
+          {mobileSidebarOpen && (
+            // mobile-only overlay: align children to the top so the backdrop can match panel height
+            <div className="fixed inset-0 z-50 flex lg:hidden items-start">
+              <div ref={mobilePanelRef} className="w-70 sm:w-72 bg-white p-4 shadow-lg rounded-b-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg text-[#0C6227]">All Categories For You</h3>
+                  <button onClick={() => setMobileSidebarOpen(false)} className="text-gray-600">Close</button>
+                </div>
+                <div className="overflow-y-auto" style={{ maxHeight: '40vh' }}>
+                  {categories.map((category) => (
+                    <div key={category.id}>
+                      <button
+                        onClick={() => handleCategoryClick(category.id)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                          selectedCategory === category.id
+                            ? 'bg-[#3F4E40] text-white'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span className="font-medium text-sm">{category.name}</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div
+                className="flex-1 bg-black/20 backdrop-blur-sm"
+                onClick={() => setMobileSidebarOpen(false)}
+                // set explicit height equal to the panel height so the blur only covers that vertical area
+                style={mobilePanelHeight ? { height: `${mobilePanelHeight}px` } : undefined}
+              />
+            </div>
+          )}
+
+          <main className="flex-1">
+            {/* Mobile: categories toggle */}
+            <div className="md:hidden mb-4">
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#3F4E40] text-white"
+              >
+                Categories
+              </button>
+            </div>
+
             {/* Selected Category Header */}
-            <div className="flex bg-white rounded-md shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex bg-white rounded-md shadow-sm border border-gray-200  mb-6">
               <div className="flex items-center gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">
+                  <h2 className="text-2xl font-bold ml-5 text-gray-800">
                     {currentCategory?.name}
                   </h2>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 ml-5">
                     {products.length} {products.length === 1 ? 'product' : 'products'} available
                   </p>
                 </div>
@@ -162,7 +293,7 @@ const Category: React.FC = () => {
                       <img
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-22  object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full  object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                    
                       <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-50">
@@ -170,11 +301,7 @@ const Category: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                       </button>
-                      <button className="absolute bottom-3 right-3 w-8 h-8 bg-[#3F4E40] rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-[#2d3a2e]">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                      </button>
+                      {/* plus button removed per request (was shown on hover) */}
                     </div>
 
                     {/* Product Info */}
