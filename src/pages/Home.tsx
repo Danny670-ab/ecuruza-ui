@@ -57,37 +57,29 @@ function Home() {
       <Hero />
       
       {/* Categories Section - One Row with horizontal scroll */}
-      <div className="max-w-screen-2xl mx-auto px-4 py-8 mt-4">
+      <div className="max-w-screen-2xl mx-auto px-4 py-1">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-black">All Categories</h2>
-          <Link 
-            to="/shop" 
-            className="text-[#3F4E40] font-medium hover:underline flex items-center gap-1"
-          >
-            View All
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          <h2 className="text-2xl px-2 font-bold text-black">All Categories</h2>
+       
         </div>
         
         {/* Single row with horizontal scroll */}
         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
           {categories.map((category) => (
             <Link 
-              to={`/category?cat=${category.id}`} 
+              to={`/ctegory?cat=${category.id}`} 
               key={category.id}
               className="group shrink-0"
             >
-              <div className="w-32 sm:w-36 md:w-40 h-32 sm:h-36 md:h-40 relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition-all duration-300">
+              <div className="w-16 sm:w-18 md:w-20 h-16 sm:h-18 md:h-20 relative overflow-hidden rounded-full shadow-m hover:shadow-x transition-all duration-300">
                 <img 
                   src={category.image} 
                   alt={category.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  className="w-full h- rounded-full object-cover group-hover:scale- transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
-                  <h3 className="text-white font-bold text-xs sm:text-sm text-center truncate">{category.name}</h3>
+                  <h3 className="text-white font-bold text-xs sm:text-sm text-cente truncate">{category.name}</h3>
                 </div>
               </div>
             </Link>

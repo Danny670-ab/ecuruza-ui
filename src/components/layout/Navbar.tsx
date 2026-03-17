@@ -132,7 +132,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white backdrop-blur-sm border border-gray-200 shadow-sm">
+  <nav className={`fixed top-0 left-0 right-0 z-50 ${location.pathname.startsWith('/category') ? 'bg-white/1 backdrop-blur-sm' : 'bg-white'} border border-gray-200 shadow-sm`}>
       {/* Upper row: logo + search + actions */}
       <div className="max-w-screen-2xl mx-auto px-6 flex items-center gap-3">
         <Link to="/" className="items-center gap-0.5 shrink-0">
@@ -307,16 +307,20 @@ const Navbar: React.FC = () => {
 
           {/* Nav items */}
           <div className="grid grid-cols-1 gap-3 mt-10">
-            {NAV_ITEM_KEYS.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="w-full h-10 inline-flex items-center justify-center rounded-md text-sm font-medium text-[#0C6227] bg-gray-50"
-                onClick={() => setOpen(false)}
-              >
-                {t.nav[item.key]}
-              </Link>
-            ))}
+            {NAV_ITEM_KEYS.map((item) => {
+              // On mobile, open the Category page with a query flag so the page can show its mobile overlay
+              const to = item.href === '/category' ? `${item.href}?openCat=1` : item.href;
+              return (
+                <Link
+                  key={item.href}
+                  to={to}
+                  className="w-full h-10 inline-flex items-center justify-center rounded-md text-sm font-medium text-[#0C6227] bg-gray-50"
+                  onClick={() => setOpen(false)}
+                >
+                  {t.nav[item.key]}
+                </Link>
+              );
+            })}
 
             {/* Auth buttons */}
             <div className="pt-2 border-t border-gray-100 mt-2 flex flex-col gap-2">
