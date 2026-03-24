@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface Category {
   id: number;
@@ -42,49 +43,7 @@ const categories: Category[] = [
 ];
 
 // Product interface
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  category: string;
-  rating: number;
-  reviews: number;
-  location: string;
-  uploadedTime: string;
-}
-
-const sampleProducts: Product[] = [
-  { id: 1, name: 'Premium Smartphone Pro', price: 899, originalPrice: 999, image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400', category: 'Consumer Electronics', rating: 4.8, reviews: 234, location: 'Kigali, Rwanda', uploadedTime: '2 hours ago' },
-  { id: 2, name: 'Ultra Laptop 15"', price: 1299, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400', category: 'Consumer Electronics', rating: 4.9, reviews: 156, location: 'Kigali, Rwanda', uploadedTime: '5 hours ago' },
-  { id: 3, name: 'Smart Watch Series X', price: 299, originalPrice: 349, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', category: 'Consumer Electronics', rating: 4.7, reviews: 189, location: 'Kigali, Rwanda', uploadedTime: '1 day ago' },
-  { id: 4, name: 'Wireless Earbuds Pro', price: 199, image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400', category: 'Consumer Electronics', rating: 4.6, reviews: 312, location: 'Kigali, Rwanda', uploadedTime: '3 hours ago' },
-  { id: 5, name: 'Professional Camera', price: 1499, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400', category: 'Consumer Electronics', rating: 4.9, reviews: 89, location: 'Kigali, Rwanda', uploadedTime: '2 days ago' },
-  { id: 6, name: 'Designer Dress Collection', price: 159, image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400', category: 'Apparel & Accessories', rating: 4.6, reviews: 89, location: 'Kigali, Rwanda', uploadedTime: '4 hours ago' },
-  { id: 7, name: 'Premium Winter Jacket', price: 249, originalPrice: 299, image: 'https://images.unsplash.com/photo-1544923246-77307dd628b5?w=400', category: 'Apparel & Accessories', rating: 4.8, reviews: 67, location: 'Kigali, Rwanda', uploadedTime: '6 hours ago' },
-  { id: 7.1, name: 'Classic Denim Pants', price: 89, image: '/src/assets/pant1.jpeg', category: 'Apparel & Accessories', rating: 4.5, reviews: 45, location: 'Kigali, Rwanda', uploadedTime: '2 hours ago' },
-  { id: 8, name: 'Casual Sweater', price: 89, image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400', category: 'Apparel & Accessories', rating: 4.5, reviews: 45, location: 'Kigali, Rwanda', uploadedTime: '1 day ago' },
-  { id: 9, name: 'Modern Sofa Set', price: 899, image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400', category: 'Home & Garden', rating: 4.5, reviews: 123, location: 'Kigali, Rwanda', uploadedTime: '3 days ago' },
-  { id: 10, name: 'LED Table Lamp', price: 49, image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400', category: 'Home & Garden', rating: 4.4, reviews: 78, location: 'Kigali, Rwanda', uploadedTime: '5 hours ago' },
-  { id: 11, name: 'Garden Tools Set', price: 129, image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400', category: 'Home & Garden', rating: 4.6, reviews: 56, location: 'Kigali, Rwanda', uploadedTime: '2 days ago' },
-  { id: 12, name: 'Professional Fitness Equipment', price: 599, image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400', category: 'Sports & Entertainment', rating: 4.7, reviews: 45, location: 'Kigali, Rwanda', uploadedTime: '1 day ago' },
-  { id: 13, name: 'Luxury Skincare Set', price: 189, image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400', category: 'Beauty', rating: 4.9, reviews: 234, location: 'Kigali, Rwanda', uploadedTime: '8 hours ago' },
-  { id: 14, name: 'Makeup Palette', price: 79, image: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400', category: 'Beauty', rating: 4.7, reviews: 156, location: 'Kigali, Rwanda', uploadedTime: '12 hours ago' },
-  { id: 15, name: 'Vintage Leather Bag', price: 179, image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400', category: 'Luggage & Bags', rating: 4.6, reviews: 78, location: 'Kigali, Rwanda', uploadedTime: '2 days ago' },
-  { id: 16, name: 'Travel Backpack', price: 129, image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400', category: 'Luggage & Bags', rating: 4.8, reviews: 134, location: 'Kigali, Rwanda', uploadedTime: '1 day ago' },
-  { id: 17, name: 'Diamond Pendant Necklace', price: 1299, image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400', category: 'Jewelry & Watches', rating: 4.9, reviews: 56, location: 'Kigali, Rwanda', uploadedTime: '5 days ago' },
-  { id: 18, name: 'Running Sneakers Pro', price: 129, originalPrice: 159, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', category: 'Sportswear & Outdoor', rating: 4.7, reviews: 189, location: 'Kigali, Rwanda', uploadedTime: '3 hours ago' },
-  { id: 19, name: 'Hiking Boots', price: 179, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', category: 'Sportswear & Outdoor', rating: 4.8, reviews: 67, location: 'Kigali, Rwanda', uploadedTime: '6 hours ago' },
-  { id: 20, name: 'Organic Baby Food Set', price: 39, image: 'https://images.unsplash.com/photo-1560891958-68bb1b0e49f6?w=400', category: 'Kids & Toys', rating: 4.8, reviews: 67, location: 'Kigali, Rwanda', uploadedTime: '1 day ago' },
-  { id: 21, name: 'Building Blocks Toy', price: 49, image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400', category: 'Kids & Toys', rating: 4.6, reviews: 234, location: 'Kigali, Rwanda', uploadedTime: '2 days ago' },
-  { id: 22, name: 'Pet Food Premium', price: 49, image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400', category: 'Pet Supplies', rating: 4.6, reviews: 134, location: 'Kigali, Rwanda', uploadedTime: '4 hours ago' },
-  { id: 23, name: 'Pet Toy Set', price: 29, image: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=400', category: 'Pet Supplies', rating: 4.5, reviews: 89, location: 'Kigali, Rwanda', uploadedTime: '1 day ago' },
-  { id: 24, name: 'LED Ceiling Light', price: 89, image: 'https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=400', category: 'Lights & Lighting', rating: 4.5, reviews: 45, location: 'Kigali, Rwanda', uploadedTime: '3 days ago' },
-  { id: 25, name: 'Smart Home Hub', price: 199, image: 'https://images.unsplash.com/photo-1558089687-f282ffcbc126?w=400', category: 'Home Appliances', rating: 4.7, reviews: 89, location: 'Kigali, Rwanda', uploadedTime: '2 days ago' },
-  { id: 26, name: 'Car Performance Tires', price: 299, image: 'https://images.unsplash.com/photo-1569391570861-20c3b82a1a02?w=400', category: 'Automotive Supplies', rating: 4.8, reviews: 112, location: 'Kigali, Rwanda', uploadedTime: '5 days ago' },
-  { id: 27, name: 'Car Battery', price: 159, image: 'https://images.unsplash.com/photo-1569391570861-20c3b82a1a02?w=400', category: 'Automotive Supplies', rating: 4.7, reviews: 67, location: 'Kigali, Rwanda', uploadedTime: '4 days ago' },
-];
+import sampleProducts from '../data/products';
 
 const Category: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -93,6 +52,7 @@ const Category: React.FC = () => {
   
   const [selectedCategory, setSelectedCategory] = useState<number>(initialCategory);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   // Mobile panel ref and measured height so the backdrop can match the panel's height
   const mobilePanelRef = useRef<HTMLDivElement | null>(null);
@@ -286,14 +246,16 @@ const Category: React.FC = () => {
                 {products.map((product) => (
                   <div 
                     key={product.id}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 group cursor-pointer"
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 group cursor-pointer flex flex-col"
+                    style={{ minHeight: '480px', maxHeight: '480px' }}
                   >
                     {/* Product Image */}
-                    <div className="relative aspect-square overflow-hidden bg-gray-100">
+                    <div className="relative overflow-hidden bg-gray-100" style={{ height: '280px' }}>
                       <img
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-full  object-cover group-hover:scale-105 transition-transform duration-300"
+                        onClick={() => navigate(`/product/${product.id}`, { state: { product } })}
+                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                       />
                    
                       <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-50">
@@ -305,14 +267,14 @@ const Category: React.FC = () => {
                     </div>
 
                     {/* Product Info */}
-                    <div className="p-4 relative">
+                    <div className="p-4 relative flex flex-col flex-1">
                       {/* Rating at the top right */}
                       <div className="absolute top-4 right-4 flex items-center gap-1">
                         <div className="flex items-center">
                           {[...Array(5)].map((_, i) => (
                             <svg
                               key={i}
-                              className={`w-3 h-3 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                              className={`w-3 h-3 ${i < Math.floor(product.rating ?? 0) ? 'text-yellow-400' : 'text-gray-300'}`}
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -339,12 +301,17 @@ const Category: React.FC = () => {
                         <span>{product.uploadedTime}</span>
                       </div>
                       {/* Price at bottom */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-[#3F4E40]">{product.price}RW</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {product.originalPrice && (
+                          <>
+                           <span className="text-sm text-gray-400 line-through">{product.originalPrice}RW</span>
+                          </>
+                        )}
+                       <span className="text-xl font-bold text-[#3F4E40]">{product.price}RW</span>
                       </div>
                       {/* View More Button */}
-                      <div className='flex justify-center items-center'>
-                       <button className="flex justify-center items-center mt-3 w-ful py-1 px-8 border text-[#0C6227] text-sm font-medium rounded-full hover:bg-[#aec7b0] transition-colors duration-200 ">
+                      <div className='flex justify-center items-center mt-auto'>
+                       <button onClick={() => { navigate(`/product/${product.id}`, { state: { product } }); }} className="flex justify-center items-center mt-3 w-ful py-1 px-8 border text-[#0C6227] text-sm font-medium rounded-full hover:bg-[#aec7b0] transition-colors duration-200 ">
                         View More
                       </button>
                       </div>   
@@ -359,6 +326,7 @@ const Category: React.FC = () => {
               </div>
             )}
           </main>
+          {/* product page navigation used instead of modal */}
         </div>
       </div>
     </div>

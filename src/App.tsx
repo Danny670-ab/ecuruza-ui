@@ -5,6 +5,7 @@ import ForgotPassword from './components/Authantications/ForgotPassword';
 import ResetPassword from './components/Authantications/ResetPassword';
 import Home from './pages/Home';
 import Category from './pages/Category';
+import ProductPage from './pages/Product';
 import VerifyCode from './components/Authantications/VerfyEmail';
 import SignUp from './components/Authantications/SignUp';
 import SellerRegistration from './components/Authantications/SellerRegistration';
@@ -19,6 +20,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/category" element={<Category />} />
+          <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
