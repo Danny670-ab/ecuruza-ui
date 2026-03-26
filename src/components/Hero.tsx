@@ -189,7 +189,6 @@ function Hero() {
                   <span className="absolute lg:flex mt-4 lg:bottom-4 bg-[#3F4E40] text-white border-[#07f051] px-3 lg:px-4 text-sm lg:text-lg font-bold rounded-2xl lg:rounded-3xl">
                   {slide.price}
                  </span>
-            
                 </div>
                 <div className="flex items-center justify-center mt-2 lg:mt-4">
                 <button 

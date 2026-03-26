@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import sampleProducts from '../data/products';
 import type { Product } from '../data/products';
+import SellerInfo from './Sellerinfo';
 
 // Small helper to display prices like "20K" when number >= 1000.
 function formatPrice(raw?: number | string | null | undefined) {
@@ -47,6 +48,7 @@ const ProductPage: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<number | string | null>(null);
   const [selectedStorage, setSelectedStorage] = useState<string>('256GB');
   const [selectedQuality, setSelectedQuality] = useState<number>(1);
+  // const [activeTab, setActiveTab] = useState<'detail' | 'service' | 'feedback'>('detail');
 
   // Check if product is mobile/laptop/electronics
   const isElectronics = product?.category?.toLowerCase().includes('mobile') || 
@@ -58,6 +60,27 @@ const ProductPage: React.FC = () => {
 
   // Storage options for electronics
   const storageOptions = ['256GB', '512GB', '1TB'];
+
+  // Get store details based on category
+  const getStoreDetails = (category?: string) => {
+    if (!category) return { name: 'Gikundiro Store', location: 'Kigali, Rwanda', phone: '+250 780 000 000', rating: '4.5', responseTime: '2h' };
+    const cat = category.toLowerCase();
+    if (cat.includes('consumer electronics')) return { name: 'TechZone Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 111 111', rating: '4.9', responseTime: '30min' };
+    if (cat.includes('apparel')) return { name: 'Fashion Hub Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 222 222', rating: '4.8', responseTime: '1h' };
+    if (cat.includes('home')) return { name: 'HomeStyle Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 333 333', rating: '4.7', responseTime: '2h' };
+    if (cat.includes('sports')) return { name: 'Sportify Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 444 444', rating: '4.8', responseTime: '45min' };
+    if (cat.includes('beauty')) return { name: 'Beauty Bliss Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 555 555', rating: '4.9', responseTime: '30min' };
+    if (cat.includes('jewelry')) return { name: 'Sparkle Gems Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 666 666', rating: '5.0', responseTime: '15min' };
+    if (cat.includes('luggage')) return { name: 'Travel Essentials Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 777 777', rating: '4.7', responseTime: '1h' };
+    if (cat.includes('kids')) return { name: 'Toy World Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 888 888', rating: '4.8', responseTime: '45min' };
+    if (cat.includes('pet')) return { name: 'Pet Care Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 999 999', rating: '4.6', responseTime: '2h' };
+    if (cat.includes('automotive')) return { name: 'Auto Parts Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 101 010', rating: '4.7', responseTime: '1h' };
+    if (cat.includes('lights')) return { name: 'Lighting Store Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 202 020', rating: '4.8', responseTime: '1h' };
+    if (cat.includes('appliance')) return { name: 'Appliances Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 303 030', rating: '4.7', responseTime: '2h' };
+    return { name: 'Gikundiro Store', location: 'Kigali, Rwanda', phone: '+250 780 000 000', rating: '4.5', responseTime: '2h' };
+  };
+
+  const storeDetails = product ? getStoreDetails(product.category) : { name: 'Gikundiro Store', location: 'Kigali, Rwanda', phone: '+250 780 000 000', rating: '4.5', responseTime: '2h' };
 
   // Color names mapping
   const colorNames: { [key: string]: string } = {
@@ -96,30 +119,26 @@ const ProductPage: React.FC = () => {
               <button
                 key={i}
                 onClick={() => { setSelectedIndex(i); setSelectedImage(src); }}
+                onMouseEnter={() => { setSelectedIndex(i); setSelectedImage(src); }}
                 className={`w-28 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:opacity-90 ${i === selectedIndex ? 'ring-2 ring-[#3F4E40] ring-offset-2' : 'border border-gray-200'}`}
               >
                 <div className="relative">
                   <img src={src} alt={`View ${i + 1}`} className="w-full h-28 object-cover" />
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 text-center">
-                    {['Front', 'Back', 'Side'][i] || `View ${i + 1}`}
-                  </div>
                 </div>
               </button>
             ))}
           </div>
 
           <div className="relative flex-1">
-            <div className="absolute right-3 top-3 flex flex-col gap-2 z-10">
+            {/* <div className="absolute right-3 top-3 flex flex-col gap-2 z-10">
               <button className="w-9 h-9 bg-white rounded-md shadow flex items-center justify-center">❤</button>
-            </div>
-
+            </div> */}
             <div className="rounded-md  overflow-hidden bg-gray-100" style={{ height: '500px', width: '500px' }}>
               <img src={selectedImage} alt={product.name} className="w-full h-full object-cover object-center" />
             </div>
-
             <div className="flex gap-3 mt-4 lg:hidden overflow-x-auto pb-2">
               {normImages.map((src, i) => (
-                <button key={i} onClick={() => { setSelectedIndex(i); setSelectedImage(src); }} className={`w-24 shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:opacity-90 ${i === selectedIndex ? 'ring-2 ring-[#3F4E40] ring-offset-2' : 'border border-gray-200'}`}>
+                <button key={i} onClick={() => { setSelectedIndex(i); setSelectedImage(src); }} onMouseEnter={() => { setSelectedIndex(i); setSelectedImage(src); }} className={`w-24 shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:opacity-90 ${i === selectedIndex ? 'ring-2 ring-[#3F4E40] ring-offset-2' : 'border border-gray-200'}`}>
                   <div className="relative">
                     <img src={src} alt={`View ${i + 1}`} className="w-full h-24 object-cover" />
                     <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 text-center">
@@ -134,7 +153,7 @@ const ProductPage: React.FC = () => {
 
         {/* Right: details */}
         <div className="pt-2 ml-14">
-          <div className="text-sm text-gray-500 mb-1">Gikundiro Store</div>
+          <div className="text-sm text-gray-500 mb-1">{storeDetails.name}</div>
           <h1 className="text-3xl font-bold mt-1">{product.name}</h1>
 
           {/* 5-Star Rating */}
@@ -153,7 +172,6 @@ const ProductPage: React.FC = () => {
             </div>
             <span className="text-sm text-gray-500">{product.rating ?? 4.5} ({product.reviews ?? 0} reviews)</span>
           </div>
-
           <div className="mt-4 flex items-baseline gap-3 flex-wrap">
             {product.originalPrice && (
               <>
@@ -162,14 +180,12 @@ const ProductPage: React.FC = () => {
                 </span>
              </>       
             )}
-            <span className="text-3xl font-extrabold text-black">${formatPrice(product.price)}</span>
+            <span className="text-3xl font-extrabold text-black">${formatPrice(product.price * selectedQuality)}</span>
           </div>
-
           <div className="mt-6">
             <div className="text-sm font-medium mb-2">Description:</div>
             <div className="text-gray-600 text-sm max-h-36 overflow-y-auto">{product.description}</div>
-          </div>
-
+          </div>   
           {/* Select Color */}
           {normColors.length > 0 && (
           <div className="mt-6">
@@ -230,7 +246,7 @@ const ProductPage: React.FC = () => {
               <div className="text-sm font-medium mb-3">Quantity</div>
               <button 
                 onClick={() => setSelectedQuality(Math.max(1, selectedQuality - 1))}
-                className="w-10 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-xl font-bold hover:bg-gray-200"
+                className="w-10 h-8 rounded-lg bg-gray-100 flex items-center justify-center  text-xl font-bold hover:bg-gray-200"
               >
                 -
               </button>
@@ -258,9 +274,15 @@ const ProductPage: React.FC = () => {
 
           </div>
         </div>
+
+      </div>
+      <div className='mt-20'>
+        <SellerInfo product={product} />
       </div>
     </div>
   );
 };
 
 export default ProductPage;
+
+

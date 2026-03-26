@@ -64,22 +64,22 @@ function Home() {
         </div>
         
         {/* Single row with horizontal scroll */}
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
           {categories.map((category) => (
             <Link 
               to={`/ctegory?cat=${category.id}`} 
               key={category.id}
               className="group shrink-0"
             >
-              <div className="w-16 sm:w-18 md:w-20 h-16 sm:h-18 md:h-20 relative overflow-hidden rounded-full shadow-m hover:shadow-x transition-all duration-300">
+              <div className="w-16 items-center justify-center sm:w-18 md:w-20 h-16 sm:h-18 md:h-20 relative overflow-hidden rounded-lg shadow-m hover:shadow-x transition-all duration-300">
                 <img 
                   src={category.image} 
                   alt={category.name}
-                  className="w-full h- rounded-full object-cover group-hover:scale- transition-transform duration-300"
+                  className="w-full h- rounded-m object-cover group-hover:scale- transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
-                  <h3 className="text-white font-bold text-xs sm:text-sm text-cente truncate">{category.name}</h3>
+                  <h3 className="text-white font-bo text-sm sm:text-sm  truncate">{category.name}</h3>
                 </div>
               </div>
             </Link>

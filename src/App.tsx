@@ -6,6 +6,7 @@ import ResetPassword from './components/Authantications/ResetPassword';
 import Home from './pages/Home';
 import Category from './pages/Category';
 import ProductPage from './pages/Product';
+import Footer from './components/layout/Footer';
 import VerifyCode from './components/Authantications/VerfyEmail';
 import SignUp from './components/Authantications/SignUp';
 import SellerRegistration from './components/Authantications/SellerRegistration';
@@ -31,6 +32,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
+      <Footer />
     </Router>
   );
 }
