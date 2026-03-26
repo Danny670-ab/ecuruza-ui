@@ -39,7 +39,7 @@ const ProductPage: React.FC = () => {
   };
   const normColors = (colors.length >= 3) ? colors.slice(0, 3) : [...colors, ...defaultColors].slice(0, 3);
   const normImages = (images.length >= 3) ? images.slice(0, 3) : [...images, ...Array(Math.max(0, 3 - images.length)).fill(images[0])];
-  const normSizes = sizes.length > 0 ? sizes : defaultSizes;
+  const normSizes = sizes.length > 0 ? sizes : defaultSizes();
 
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [selectedImage, setSelectedImage] = useState<string>(normImages[0]);
