@@ -96,13 +96,11 @@ const ProductPage: React.FC = () => {
               <button
                 key={i}
                 onClick={() => { setSelectedIndex(i); setSelectedImage(src); }}
+                onMouseEnter={() => { setSelectedIndex(i); setSelectedImage(src); }}
                 className={`w-28 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:opacity-90 ${i === selectedIndex ? 'ring-2 ring-[#3F4E40] ring-offset-2' : 'border border-gray-200'}`}
               >
                 <div className="relative">
                   <img src={src} alt={`View ${i + 1}`} className="w-full h-28 object-cover" />
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 text-center">
-                    {['Front', 'Back', 'Side'][i] || `View ${i + 1}`}
-                  </div>
                 </div>
               </button>
             ))}
@@ -119,7 +117,7 @@ const ProductPage: React.FC = () => {
 
             <div className="flex gap-3 mt-4 lg:hidden overflow-x-auto pb-2">
               {normImages.map((src, i) => (
-                <button key={i} onClick={() => { setSelectedIndex(i); setSelectedImage(src); }} className={`w-24 shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:opacity-90 ${i === selectedIndex ? 'ring-2 ring-[#3F4E40] ring-offset-2' : 'border border-gray-200'}`}>
+                <button key={i} onClick={() => { setSelectedIndex(i); setSelectedImage(src); }} onMouseEnter={() => { setSelectedIndex(i); setSelectedImage(src); }} className={`w-24 shrink-0 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:opacity-90 ${i === selectedIndex ? 'ring-2 ring-[#3F4E40] ring-offset-2' : 'border border-gray-200'}`}>
                   <div className="relative">
                     <img src={src} alt={`View ${i + 1}`} className="w-full h-24 object-cover" />
                     <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 text-center">
