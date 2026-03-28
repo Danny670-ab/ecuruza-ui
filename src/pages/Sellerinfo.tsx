@@ -48,6 +48,7 @@ const Sellerinfo: React.FC<SellerInfoProps> = ({ product }) => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* LEFT SIDEBAR */}
         <div className="lg:col-span-1">
+          <div className="sticky top-20">
           {/* Seller Info Section */}
           <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
             <h3 className="text-base font-semibold text-gray-900 mb-4">Seller Info</h3>
@@ -90,7 +91,7 @@ const Sellerinfo: React.FC<SellerInfoProps> = ({ product }) => {
                   className="flex gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => navigate(`/product/${item.id}`, { state: { product: item } })}
                 >
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -100,6 +101,7 @@ const Sellerinfo: React.FC<SellerInfoProps> = ({ product }) => {
                 </div>
               ))}
             </div>
+          </div>
           </div>
         </div>
 
@@ -241,7 +243,7 @@ const Sellerinfo: React.FC<SellerInfoProps> = ({ product }) => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Service Commitment</h3>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
                         <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
@@ -254,7 +256,7 @@ const Sellerinfo: React.FC<SellerInfoProps> = ({ product }) => {
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                         <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
                         </svg>
@@ -267,7 +269,7 @@ const Sellerinfo: React.FC<SellerInfoProps> = ({ product }) => {
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
                         <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                         </svg>
@@ -280,7 +282,7 @@ const Sellerinfo: React.FC<SellerInfoProps> = ({ product }) => {
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
                         <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
                         </svg>

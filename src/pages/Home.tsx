@@ -1,5 +1,6 @@
 import Hero from '../components/Hero'
 import { Link } from 'react-router-dom'
+import { useRef } from 'react'
 import glo from '../assets/glo.png'
 import iphone from '../assets/iphone.png'
 import furniture from '../assets/furniture.png'
@@ -9,6 +10,7 @@ import logo2 from '../assets/logo2.png'
 import first from '../assets/first.png'
 import second from '../assets/second.jpg'
 import vegetable from '../assets/vegetable.png'
+import { sampleProducts } from '../data/products'
 
 interface CategoryItem {
   id: number
@@ -52,38 +54,147 @@ const categories: CategoryItem[] = [
 ]
 
 function Home() {
+  // Get products with 20%+ discount and duplicate for more scroll items
+  const dealProducts = sampleProducts.filter(p => {
+    if (!p.originalPrice) return false;
+    const discount = ((p.originalPrice - p.price) / p.originalPrice) * 100;
+    return discount >= 20;
+  });
+  // Duplicate products for better scrolling experience
+  const scrollProducts = [...dealProducts, ...dealProducts];
+
+  // Ref for the scrollable container
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll functions
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className='w-full'>
       <Hero />
       
       {/* Categories Section - One Row with horizontal scroll */}
-      <div className="max-w-screen-2xl mx-auto px-4 py-1">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-screen-2xl mx-auto px-6 py-1">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-2xl px-2 font-bold text-black">All Categories</h2>
-       
         </div>
         
         {/* Single row with horizontal scroll */}
-        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide px-1">
           {categories.map((category) => (
             <Link 
               to={`/ctegory?cat=${category.id}`} 
               key={category.id}
               className="group shrink-0"
             >
-              <div className="w-16 items-center justify-center sm:w-18 md:w-20 h-16 sm:h-18 md:h-20 relative overflow-hidden rounded-lg shadow-m hover:shadow-x transition-all duration-300">
+              <div className="flex w-28 items-center justify-center sm:w-18 md:w-30 h-28 sm:h-18 md:h-30 relative overflow-hidden rounded-lg shadow-m hover:shadow-x transition-all duration-300">
                 <img 
                   src={category.image} 
                   alt={category.name}
-                  className="w-full h- rounded-m object-cover group-hover:scale- transition-transform duration-300"
+                  className="w-full h-40 flex rounded-m object-cover group-hover:scale- transition-transform duration-300"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
                   <h3 className="text-white font-bo text-sm sm:text-sm  truncate">{category.name}</h3>
                 </div>
               </div>
             </Link>
           ))}
+        </div>
+        
+        {/* Super Deals Section */}
+        <div className='mt-5'>
+          {/* Header with View All */}
+          <div className='flex items-center justify-between mb-3 px-1'>
+            <h2 className='text-xl font-bold text-gray-800'>Super Deals</h2>
+            <Link 
+              to="/shopnow?deals=true" 
+              className='text-[#3F4E40] font-medium text-sm hover:underline flex items-center gap-1'
+            >
+              View All
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+          
+          <div className='flex flex-col md:flex-row items-start gap-4'> 
+            <div className="bg-[#3F4E40] rounded-lg p-4 md:p-8 text-center w-full md:w-50 shrink-0">
+              <h1 className='text-white font-bold text-xl md:text-2xl'>Super Deals</h1>
+              <h2 className='text-white mt-2 md:mt-3 font-semibold text-sm md:text-base'>Up To 20% Off</h2>
+              <p className='text-xs text-white mt-3 md:mt-5'>This Round Ends in 3 Days</p>
+              <div className='flex mt-3 md:mt-4 items-center justify-center'>
+                <button className='flex bg-white items-center justify-center rounded-full text-black px-3 py-1.5 md:px-4 md:py-2 text-sm font-semibold hover:bg-gray-100 transition-colors'>Shop Now</button>
+              </div>
+            </div>
+            
+            {/* Products scroll - horizontally scrollable */}
+            <div className='flex-1 w-full overflow-hidden relative'>
+              {/* Left Arrow */}
+              <button 
+                onClick={scrollLeft}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-100 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide px-8">
+                {scrollProducts.map((product, index) => (
+                  <Link 
+                    to={`/product/${product.id}`}
+                    key={`${product.id}-${index}`}
+                    className="group shrink-0"
+                  >
+                    <div className="w-40 md:w-44 relative overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-all duration-300 bg-white">
+                      <div className="relative h-36 md:h-40 overflow-hidden">
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {product.originalPrice && (
+                          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
+                            {Math.round((1 - product.price / product.originalPrice) * 100)}% OFF
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-2 md:p-3">
+                        <h3 className="text-gray-800 font-medium text-xs md:text-sm truncate">{product.name}</h3>
+                        <div className="flex items-center mt-1 gap-1">
+                          <span className="text-[#3F4E40] font-bold text-sm md:text-base">${product.price}</span>
+                          {product.originalPrice && (
+                            <span className="text-gray-400 text-xs line-through">${product.originalPrice}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              
+              {/* Right Arrow */}
+              <button 
+                onClick={scrollRight}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-100 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* Custom scrollbar - thin version */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: thin;  /* Firefox - thin scrollbar */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  height: 3px; /* Reduced scrollbar height */
+}
+
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background: #3F4E40;
+  border-radius: 3px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 @keyframes marquee {
   0% {
     transform: translateX(0);
