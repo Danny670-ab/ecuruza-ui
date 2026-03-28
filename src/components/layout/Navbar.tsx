@@ -9,7 +9,7 @@ const NAV_ITEM_KEYS: NavItemKey[] = [
   { href: '/', key: 'home' },
   { href: '/category', key: 'category' },
   { href: '/about', key: 'about' },
-  { href: '/shop', key: 'shop' },
+  { href: '/shopnow', key: 'shopnow' },
   { href: '/wishlist', key: 'wishList' },
   { href: '/stores', key: 'stores' },
 ];
@@ -24,7 +24,7 @@ const TRANSLATIONS: Record<
   }
 > = {
   en: {
-    nav: { home: 'Home', category: 'Category', about: 'About', shop: 'Shop', wishList: 'WishList', stores:'Stores' },
+    nav: { home: 'Home', category: 'Category', about: 'About', shopnow: 'Shop Now', wishList: 'WishList', stores:'Stores' },
     login: 'Login',
     signup: 'Sign up',
     startSelling: 'Start Selling',
