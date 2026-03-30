@@ -139,7 +139,7 @@ function Hero() {
               <img
                 src={slide.image}
                 alt={slide.title}
-                className="h-56 lg:h-105 w-full lg:w-155 bg-gray-200 object-cover"
+                className="h-48 lg:h-105 w-full lg:w-155 bg-gray-200 object-cover"
               />
               <button className="sponsored-badge absolute top-3 lg:top-4 right-3 lg:right-4 bg-[#1976D2] text-white px-3 lg:px-3 py-1 text-xs lg:text-sm font-bold rounded-2xl lg:rounded-3xl">
                 {"Sponsored".split("").map((letter, index) => (
@@ -163,10 +163,10 @@ function Hero() {
             </div>
             
             {/* Content - Middle - Split into two sections */}
-            <div className="w-full h-140 lg:h-105 flex flex-col lg:flex-row bg-cover bg-center" style={{ backgroundImage: `url(${bg_bunner})` }}>
+            <div className="w-full h-auto lg:h-105 flex flex-col lg:flex-row bg-cover bg-center" style={{ backgroundImage: `url(${bg_bunner})` }}>
               
               {/* Left side - Product details */}
-              <div className="w-full lg:w-1/2 p-6 flex flex-col">
+              <div className="w-full lg:w-1/2 p-4 lg:p-6 flex flex-col">
                 <span className="inline-block font-bold border-white px-3 lg:px-7 border-2 lg:border-[3px] rounded-md lg:rounded-[7px] text-[12px] lg:text-sm w-fit">
                   {slide.category}
                 </span>
@@ -193,7 +193,7 @@ function Hero() {
                 <div className="flex items-center justify-center mt-2 lg:mt-4">
                 <button 
                   key={`addtocart-${currentSlide}`}
-                  className="bottom-3 lg:bottom-4 w-28 ml-40 lg:w-36 text-sm lg:text-sm justify-center border border-[#07f051] bg-[#3F4E40] text-white rounded-2xl lg:rounded-3xl font-bold flex items-center hover:bg-[#27bb56] hover:text-white transition-colors duration-300"
+                  className="bottom-3 lg:bottom-4 w-28 ml-0 lg:ml-0 lg:w-36 text-sm lg:text-sm justify-center border border-[#07f051] bg-[#3F4E40] text-white rounded-2xl lg:rounded-3xl font-bold flex items-center hover:bg-[#27bb56] hover:text-white transition-colors duration-300"
                 >
                   <img src={cart} alt="cart" className="w-6 flex lg:w-8 h-6 lg:h-8 addtocart-icon" />
                   <span className=" items-center text-sm">
@@ -208,12 +208,11 @@ function Hero() {
                     ))}
                   </span>
                 </button>
-       
                 </div>
               </div>
               
-              {/* Right side - Cover image and profile */}
-              <div className="w-full lg:w-1/2 relative">
+              {/* Right side - Cover image and profile - hidden on mobile */}
+              <div className="w-full lg:w-1/2 relative hidden lg:block">
                 <div className="absolute top-2 lg:top-3 right-4 lg:right-4 ">
                   <img
                     src={slide.coverImage}
@@ -237,14 +236,12 @@ function Hero() {
                       alt={`Profile ${slide.shopName}`}
                       className="h-16 lg:h-20 w-16 lg:w-20 object-cover rounded-full"
                     />
-                  </div>
-            
-                  <p className="text-[#1CA225] font-bold text-1xl lg:text-3xl  lg:mt-2 ">{slide.shopName}</p>
-                 
+                  </div>        
+                  <p className="text-[#1CA225] font-bold text-1xl lg:text-3xl  lg:mt-2 ">{slide.shopName}</p>          
                   <p className="mt-1 lg:mt-5 text-white text-sm lg:text-md w-30 lg:w-40 flex place-items-baseline gap-2">
                   <i className="fas fa-map-marker-alt text-[#18C85082] text-2xl lg:text-3xl location-icon"></i>
                   {slide.location}/RWANDA
-                </p>
+                  </p>
                   <h1 className="text-[#1CA225] mt-1 lg:mt-5 text-md lg:text-xl font-bold">About Shop</h1>
                   <p
                     className="text-white mt-1 text-sm lg:text-sm"
