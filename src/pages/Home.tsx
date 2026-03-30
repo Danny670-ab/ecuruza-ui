@@ -116,10 +116,10 @@ function Home() {
         <div className='mt-5'>
           {/* Header with View All */}
           <div className='flex items-center justify-between mb-3 px-1'>
-            <h2 className='text-xl font-bold text-gray-800'>Super Deals</h2>
+            <h2 className='text-xl font-bold text-[#3F4E40]'></h2>
             <Link 
               to="/shopnow?deals=true" 
-              className='text-[#3F4E40] font-medium text-sm hover:underline flex items-center gap-1'
+              className='text-[#3F4E40] right-2 font-medium text-sm hover:underline flex items-center gap-1'
             >
               View All
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

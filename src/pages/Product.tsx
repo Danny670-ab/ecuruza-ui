@@ -142,7 +142,6 @@ const ProductPage: React.FC = () => {
                   <div className="relative">
                     <img src={src} alt={`View ${i + 1}`} className="w-full h-24 object-cover" />
                     <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 text-center">
-                      {['Front', 'Back', 'Side'][i] || `View ${i + 1}`}
                     </div>
                   </div>
                 </button>
@@ -154,7 +153,7 @@ const ProductPage: React.FC = () => {
         {/* Right: details */}
         <div className="pt-2 ml-14">
           <div className="text-sm text-gray-500 mb-1">{storeDetails.name}</div>
-          <h1 className="text-3xl font-bold mt-1">{product.name}</h1>
+          <h1 className="text-3xl font-bold mt-1">{storeDetails.name}</h1>
 
           {/* 5-Star Rating */}
           <div className="mt-3 flex items-center gap-2">
@@ -180,7 +179,7 @@ const ProductPage: React.FC = () => {
                 </span>
              </>       
             )}
-            <span className="text-3xl font-extrabold text-black">${formatPrice(product.price * selectedQuality)}</span>
+            <span className="text-3xl font-extrabold text-black">{formatPrice(product.price * selectedQuality)}RW</span>
           </div>
           <div className="mt-6">
             <div className="text-sm font-medium mb-2">Description:</div>

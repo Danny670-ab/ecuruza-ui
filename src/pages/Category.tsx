@@ -125,6 +125,25 @@ const Category: React.FC = () => {
   
   const products = sampleProducts.filter(p => p.category === currentCategory?.name);
 
+  // Get store details based on category
+  const getStoreDetails = (category?: string) => {
+    if (!category) return { name: 'Gikundiro Store', location: 'Kigali, Rwanda', phone: '+250 780 000 000', rating: '4.5', responseTime: '2h' };
+    const cat = category.toLowerCase();
+    if (cat.includes('consumer electronics')) return { name: 'TechZone Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 111 111', rating: '4.9', responseTime: '30min' };
+    if (cat.includes('apparel')) return { name: 'Fashion Hub Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 222 222', rating: '4.8', responseTime: '1h' };
+    if (cat.includes('home')) return { name: 'HomeStyle Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 333 333', rating: '4.7', responseTime: '2h' };
+    if (cat.includes('sports')) return { name: 'Sportify Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 444 444', rating: '4.8', responseTime: '45min' };
+    if (cat.includes('beauty')) return { name: 'Beauty Bliss Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 555 555', rating: '4.9', responseTime: '30min' };
+    if (cat.includes('jewelry')) return { name: 'Sparkle Gems Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 666 666', rating: '5.0', responseTime: '15min' };
+    if (cat.includes('luggage')) return { name: 'Travel Essentials Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 777 777', rating: '4.7', responseTime: '1h' };
+    if (cat.includes('kids')) return { name: 'Toy World Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 888 888', rating: '4.8', responseTime: '45min' };
+    if (cat.includes('pet')) return { name: 'Pet Care Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 999 999', rating: '4.6', responseTime: '2h' };
+    if (cat.includes('automotive')) return { name: 'Auto Parts Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 101 010', rating: '4.7', responseTime: '1h' };
+    if (cat.includes('lights')) return { name: 'Lighting Store Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 202 020', rating: '4.8', responseTime: '1h' };
+    if (cat.includes('appliance')) return { name: 'Appliances Rwanda', location: 'Kigali, Rwanda', phone: '+250 780 303 030', rating: '4.7', responseTime: '2h' };
+    return { name: 'Gikundiro Store', location: 'Kigali, Rwanda', phone: '+250 780 000 000', rating: '4.5', responseTime: '2h' };
+  };
+
   const handleCategoryClick = (categoryId: number) => {
     setSelectedCategory(categoryId);
     // close mobile sidebar if open
@@ -288,7 +307,7 @@ const Category: React.FC = () => {
                         {product.name}
                       </h3>
                       {/* Location and Uploaded Time */}
-                      <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -299,6 +318,13 @@ const Category: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span>{product.uploadedTime}</span>
+                      </div>
+                      {/* Seller Name */}
+                      <div className="flex items-center gap-2 mb-3 text-xs text-[#0C6227]">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span className="font-medium">{getStoreDetails(product.category).name}</span>
                       </div>
                       {/* Price at bottom */}
                       <div className="flex items-center gap-2 flex-wrap">
