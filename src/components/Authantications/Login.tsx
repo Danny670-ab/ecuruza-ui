@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { login } from '../../redux/services/login'
+import axios from 'axios'
 import { setAuthToken } from '../../redux/axiosConfig'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -12,34 +13,283 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
+
   useEffect(() => {
-    // lock body scroll while Login is mounted
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+
+    // If already logged in as a seller, redirect directly to seller dashboard
+    try {
+      const savedToken = localStorage.getItem('token')
+      const savedSeller = localStorage.getItem('seller_profile')
+      const savedUserStr = localStorage.getItem('user')
+      if (savedToken) {
+        const parsedUser = savedUserStr ? JSON.parse(savedUserStr) : null
+        const isSellerUser =
+          Boolean(savedSeller) ||
+          String(parsedUser?.role || '').toUpperCase() === 'SELLER' ||
+          Boolean(parsedUser?.isSeller)
+        if (isSellerUser) {
+          navigate('/seller-dashboard', { replace: true })
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     return () => {
       document.body.style.overflow = prev
     }
-  }, [])
+  }, [navigate])
+
+  const isRoleSeller = (roleStr?: unknown): boolean => {
+    if (!roleStr || typeof roleStr !== 'string') return false
+    const normalized = roleStr.trim().toUpperCase()
+    return normalized === 'SELLER' || normalized === 'VENDOR' || normalized === 'MERCHANT'
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
     try {
-      const resp = await login({ email, password })
-      // expected response shape: { token?: string, user?: {...} }
-      const token = resp?.token ?? resp?.accessToken ?? null
+      const backendUrl = (
+        (import.meta.env.VITE_REACT_BACKEND_URL as string) || 'https://ecuruza-api-e33e.onrender.com/api/v1'
+      ).replace(/\/+$/, '')
+
+      const { data: resp } = await axios.post(
+        `${backendUrl}/auth/login`,
+        { email, password }
+      )
+      const token = resp?.token ?? resp?.accessToken ?? resp?.data?.token ?? resp?.data?.accessToken ?? null
+      let user = resp?.user ?? resp?.data?.user ?? null
+
       if (token) {
-        // persist token only when remember is true
         setAuthToken(token, remember)
       }
-      // redirect after successful login
-      navigate('/')
+
+      // Check whether user is a seller:
+      // 1. Direct role check from login response
+      let isSeller = false
+      if (
+        isRoleSeller(user?.role) ||
+        isRoleSeller(resp?.role) ||
+        isRoleSeller(resp?.data?.role) ||
+        Boolean(user?.isSeller) ||
+        Boolean(resp?.isSeller) ||
+        Boolean(resp?.data?.isSeller) ||
+        (Array.isArray(user?.roles) && user.roles.some(isRoleSeller)) ||
+        Boolean(user?.businessName || user?.seller || user?.shop)
+      ) {
+        isSeller = true
+      }
+
+      let sellerProfileData: Record<string, unknown> | null = null
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
+
+      // 2. If not confirmed yet, verify using the seller APIs (/sellers/me, /shop/my-shop, /sellers/dashboard, /auth/profile)
+      if (!isSeller && token) {
+        // Probe /sellers/me
+        try {
+          const sellerRes = await axios.get(`${backendUrl}/sellers/me`, {
+            headers: authHeaders,
+            timeout: 5000,
+          })
+          const sData = sellerRes.data?.data || sellerRes.data
+          if (sellerRes.status === 200 && sData && !sData.error) {
+            isSeller = true
+            const sellerObj = sData.seller || sData
+            const userObj = sellerObj?.user || sData?.user || user
+            const name =
+              [userObj?.firstName, userObj?.lastName].filter(Boolean).join(' ') ||
+              userObj?.name ||
+              sellerObj?.businessName ||
+              'Seller'
+            sellerProfileData = {
+              name,
+              email: userObj?.email || user?.email || email,
+              avatar:
+                userObj?.avatar ||
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+              storeName:
+                sellerObj?.businessName ||
+                (sellerObj?.shops && sellerObj.shops[0]?.name) ||
+                `${name}'s Store`,
+              isVerified:
+                sellerObj?.verificationStatus === 'VERIFIED' ||
+                Boolean(sellerObj?.isVerified ?? true),
+            }
+          }
+        } catch {
+          // not found or not a seller
+        }
+
+        // Probe /shop/my-shop
+        if (!isSeller) {
+          try {
+            const shopRes = await axios.get(`${backendUrl}/shop/my-shop`, {
+              headers: authHeaders,
+              timeout: 5000,
+            })
+            const sData = shopRes.data?.data || shopRes.data
+            if (shopRes.status === 200 && sData && !sData.error && (sData.shop || sData.id || sData.name)) {
+              isSeller = true
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        // Probe /sellers/dashboard
+        if (!isSeller) {
+          try {
+            const dashRes = await axios.get(`${backendUrl}/sellers/dashboard`, {
+              headers: authHeaders,
+              timeout: 5000,
+            })
+            if (dashRes.status === 200 && dashRes.data && !dashRes.data.error) {
+              isSeller = true
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        // Probe /sellers/applications/me
+        if (!isSeller) {
+          try {
+            const appRes = await axios.get(`${backendUrl}/sellers/applications/me`, {
+              headers: authHeaders,
+              timeout: 5000,
+            })
+            if (appRes.status === 200 && appRes.data && !appRes.data.error) {
+              isSeller = true
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        // Probe /auth/profile or /users/me/profile
+        if (!isSeller) {
+          try {
+            const profRes = await axios.get(`${backendUrl}/auth/profile`, {
+              headers: authHeaders,
+              timeout: 5000,
+            })
+            const pData = profRes.data?.data || profRes.data?.user || profRes.data
+            if (pData) {
+              if (isRoleSeller(pData.role) || pData.isSeller || pData.businessName) {
+                isSeller = true
+                user = { ...user, ...pData }
+              }
+            }
+          } catch {
+            try {
+              const profRes2 = await axios.get(`${backendUrl}/users/me/profile`, {
+                headers: authHeaders,
+                timeout: 5000,
+              })
+              const pData2 = profRes2.data?.data || profRes2.data?.user || profRes2.data
+              if (pData2) {
+                if (isRoleSeller(pData2.role) || pData2.isSeller || pData2.businessName) {
+                  isSeller = true
+                  user = { ...user, ...pData2 }
+                }
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+      }
+
+      // If user is confirmed as seller, fetch/prepare seller profile cache for dashboard
+      if (isSeller && !sellerProfileData && token) {
+        try {
+          const sellerRes = await axios.get(`${backendUrl}/sellers/me`, {
+            headers: authHeaders,
+            timeout: 4000,
+          })
+          const sData = sellerRes.data?.data || sellerRes.data
+          if (sData) {
+            const sellerObj = sData.seller || sData
+            const userObj = sellerObj?.user || sData?.user || user
+            const name =
+              [userObj?.firstName, userObj?.lastName].filter(Boolean).join(' ') ||
+              userObj?.name ||
+              sellerObj?.businessName ||
+              user?.fullName ||
+              'Seller'
+            sellerProfileData = {
+              name,
+              email: userObj?.email || user?.email || email,
+              avatar:
+                userObj?.avatar ||
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+              storeName:
+                sellerObj?.businessName ||
+                (sellerObj?.shops && sellerObj.shops[0]?.name) ||
+                `${name}'s Store`,
+              isVerified:
+                sellerObj?.verificationStatus === 'VERIFIED' ||
+                Boolean(sellerObj?.isVerified ?? true),
+            }
+          }
+        } catch {
+          const name =
+            [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
+            user?.name ||
+            user?.fullName ||
+            'Seller'
+          sellerProfileData = {
+            name,
+            email: user?.email || email,
+            avatar:
+              user?.avatar ||
+              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+            storeName: user?.businessName || `${name}'s Store`,
+            isVerified: true,
+          }
+        }
+      }
+
+      // Persist seller profile or user details
+      if (sellerProfileData) {
+        try {
+          localStorage.setItem('seller_profile', JSON.stringify(sellerProfileData))
+        } catch {
+          // ignore
+        }
+      }
+
+      if (user || isSeller) {
+        try {
+          const updatedUser = { ...(user || {}), role: isSeller ? 'SELLER' : (user?.role || 'CUSTOMER') }
+          localStorage.setItem('user', JSON.stringify(updatedUser))
+        } catch {
+          // ignore
+        }
+      }
+
+      // Redirect accordingly:
+      if (isSeller) {
+        toast.success('Login successful! Welcome to your Seller Dashboard.')
+        navigate('/seller-dashboard')
+      } else {
+        toast.success('Login successful')
+        navigate('/')
+      }
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string }
-      console.error('login error', err)
-      const msg = err?.response?.data?.message || err?.message || 'Login failed'
+      let msg = 'Login failed'
+      if (axios.isAxiosError(error)) {
+        msg = error.response?.data?.message || error.message || msg
+      } else if (error instanceof Error) {
+        msg = error.message
+      }
+      console.error('login error', error)
       setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }

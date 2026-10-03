@@ -1,37 +1,28 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { sendVerificationCode, verifyEmail as apiVerifyEmail } from '../../redux/services/verifyEmail';
-import { useNavigate } from 'react-router-dom';
+import { verifyEmail as apiVerifyEmail } from '../../redux/services/verifyEmail';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const CODE_LENGTH = 6;
 
 const VerifyEmail: React.FC = () => {
-  const [step, setStep] = useState<'enterCode'>('enterCode');
   const [codeValues, setCodeValues] = useState<string[]>(Array(CODE_LENGTH).fill(''));
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
-  const [email, setEmail] = useState('');
   const [verifying, setVerifying] = useState(false);
-  // no reset-password flow; verification-only
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const email = (location.state as { email?: string })?.email || '';
 
   useEffect(() => {
-    // focus first input when step is enterCode
-    if (step === 'enterCode') {
-      setTimeout(() => inputsRef.current[0]?.focus(), 80);
+    // No email passed in → user landed here directly, send them back
+    if (!email) {
+      toast.error('No email found. Please register or resend the code.');
+      navigate('/resend-email');
+      return;
     }
-  }, [step]);
-
-  const sendCode = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!email.trim()) return;
-    try {
-      await sendVerificationCode(email);
-      // show code entry (already the only step)
-      setStep('enterCode');
-    } catch (err) {
-      console.error('send code error', err);
-      // TODO: show error to user
-    }
-  };
+    setTimeout(() => inputsRef.current[0]?.focus(), 80);
+  }, [email, navigate]);
 
   const onCodeChange = (idx: number, v: string) => {
     if (!v) {
@@ -42,7 +33,6 @@ const VerifyEmail: React.FC = () => {
       });
       return;
     }
-    // accept only digits, single character
     const ch = v.replace(/\D/g, '').slice(-1);
     if (!ch) return;
     setCodeValues((prev) => {
@@ -50,7 +40,6 @@ const VerifyEmail: React.FC = () => {
       next[idx] = ch;
       return next;
     });
-    // focus next
     const nextEl = inputsRef.current[idx + 1];
     if (nextEl) nextEl.focus();
   };
@@ -80,7 +69,6 @@ const VerifyEmail: React.FC = () => {
     const next = Array(CODE_LENGTH).fill('');
     for (let i = 0; i < arr.length; i++) next[i] = arr[i];
     setCodeValues(next);
-    // focus after last pasted
     const last = Math.min(arr.length, CODE_LENGTH) - 1;
     setTimeout(() => inputsRef.current[last + 1]?.focus(), 50);
   };
@@ -88,84 +76,78 @@ const VerifyEmail: React.FC = () => {
   const verifyCode = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const code = codeValues.join('');
-    if (code.length !== CODE_LENGTH) return;
+    if (code.length !== CODE_LENGTH) {
+      toast.error('Please enter the full 6-digit code.');
+      return;
+    }
     setVerifying(true);
     try {
-  await apiVerifyEmail({ email, code });
-  // success -> redirect to login (or show success)
+      await apiVerifyEmail({ email, code });
+      toast.success('Email verified successfully!');
       navigate('/login');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('verify error', err);
-      // TODO: show user-friendly error
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const message =
+        errorObj?.response?.data?.message ||
+        errorObj?.message ||
+        'Invalid or expired code. Please try again.';
+      toast.error(message);
     } finally {
       setVerifying(false);
     }
   };
-  // no submitNewPassword - verification-only flow
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="w-full max-w-sm bg-[#F2EEEE]  rounded-2xl shadow-lg p-6">
-        {step === 'enterCode' && (
-          <>
-            <h2 className="text-center text-2xl font-semibold text-[#0C6227] mb-2">Verify Email</h2>
-            <p className="text-center text-sm text-gray-600 mb-6">
-              Enter the 6-digit code sent to your Email
-            </p>
+      <div className="w-full max-w-sm bg-[#F2EEEE] rounded-2xl shadow-lg p-6">
+        <h2 className="text-center text-2xl font-semibold text-[#0C6227] mb-2">Verify Email</h2>
+        <p className="text-center text-sm text-gray-600 mb-6">
+          Enter the 6-digit code sent to <span className="font-medium">{email}</span>
+        </p>
 
-            {/* Optionally allow resending / entering email */}
-            <form onSubmit={sendCode} className="mb-4">
-              <div className="mt-2 flex gap-2">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="flex-1 bg-white px-3 py-2 rounded-md border border-gray-200 focus:outline-none"
-                />
-              
-              </div>
-            </form>
-
-            <form onSubmit={verifyCode} className="flex flex-col  items-center gap-6">
-              <div
-                className="flex gap-3 "
-                onPaste={onPaste}
-                aria-label="Verification code input"
-              >
+        <form onSubmit={verifyCode} className="flex flex-col items-center gap-6">
+          <div
+            className="flex gap-3"
+            onPaste={onPaste}
+            aria-label="Verification code input"
+          >
             {Array.from({ length: CODE_LENGTH }).map((_, i) => (
-         <input
-         key={i}
-         ref={(el) => {
-         inputsRef.current[i] = el;
-         }}
-         value={codeValues[i]}
-         onChange={(e) => onCodeChange(i, e.target.value)}
-         onKeyDown={(e) => onKeyDown(e, i)}
-         maxLength={1}
-         inputMode="numeric"
-        className="w-12 h-12 text-center text-lg rounded-md border border-gray-200 shadow focus:outline-none focus:ring-2 focus:ring-emerald-200"
-        aria-label={`Digit ${i + 1}`}
-        />
-           ))}
-              </div>
+              <input
+                key={i}
+                ref={(el) => {
+                  inputsRef.current[i] = el;
+                }}
+                value={codeValues[i]}
+                onChange={(e) => onCodeChange(i, e.target.value)}
+                onKeyDown={(e) => onKeyDown(e, i)}
+                maxLength={1}
+                inputMode="numeric"
+                className="w-12 h-12 text-center text-lg rounded-md border border-gray-200 shadow focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                aria-label={`Digit ${i + 1}`}
+              />
+            ))}
+          </div>
 
-              <button
-                type="submit"
-                className="w-40 py-2 bg-[#3F4E40] text-white rounded-full shadow"
-                disabled={verifying}
-              >
-                {verifying ? 'Verifying...' : 'Verify'}
-              </button>
-            </form>
+          <button
+            type="submit"
+            className="w-40 py-2 bg-[#3F4E40] text-white rounded-full shadow"
+            disabled={verifying}
+          >
+            {verifying ? 'Verifying...' : 'Verify'}
+          </button>
+        </form>
 
-            <p className="text-center text-sm text-gray-500 mt-4">
-              Didn't get a code? <button type="button" className="text-emerald-700 underline" onClick={() => navigate('/resend-email')}>Resend</button>
-            </p>
-          </>
-        )}
-
-        {/* no reset-password UI in verification-only flow */}
+        <p className="text-center text-sm text-gray-500 mt-4">
+          Didn't get a code?{' '}
+          <button
+            type="button"
+            className="text-emerald-700 underline"
+            onClick={() => navigate('/resend-email', { state: { email } })}
+          >
+            Resend
+          </button>
+        </p>
       </div>
     </div>
   );

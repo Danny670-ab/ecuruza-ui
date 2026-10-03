@@ -11,6 +11,9 @@ import VerifyCode from './components/Authantications/VerfyEmail';
 import SignUp from './components/Authantications/SignUp';
 import SellerRegistration from './components/Authantications/SellerRegistration';
 import ResendEmail from './components/Authantications/ResendEmail';
+import {ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import SellerDashboard from './pages/SellerDashboard';
 
 function App() {
   return (
@@ -29,8 +32,19 @@ function App() {
           <Route path="/resend-email" element={<ResendEmail />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/seller-registration" element={<SellerRegistration />} />
+          <Route path="/seller-Dashboard" element={<SellerDashboard />} />
+          <Route path="/seller-dashboard" element={<SellerDashboard />} />
         </Routes>
       </div>
+      <ToastContainer 
+      position="top-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      pauseOnHover
+      theme="colored"
+      />
     </Router>
   );
 }
