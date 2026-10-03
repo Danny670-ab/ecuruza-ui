@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import iphone from "../assets/iphone.png"
 import ball from "../assets/ball.png"
 import furniture from "../assets/furniture.png"
@@ -35,10 +36,10 @@ const slides: Slide[] = [
     image: iphone,
     category: "Electronics",
     title: "iPhone 15 Pro Max",
-    description: "Latest Apple smartphone with powerful performance hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhh.",
-    shopDescription: "Latest Apple smartphone with powerful performance hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhh.",
+    description: "The iPhone 15 Pro Max is a powerful premium smartphone with a 6.7-inch Super Retina XDR OLED display, 120Hz ProMotion, and the fast A17 Pro chip.",
+    shopDescription: "Experience powerful performance and premium design with the iPhone 15 Pro Max. Built with a lightweight titanium design, a stunning 6.7-inch Super Retina XDR display, and the powerful A17 Pro chip",
     buttonText: "Visit Shop",
-    price: "1,099Rwf",
+    price: "2000000RWF",
     location: "Kigali",
     coverImage: caver,
     profileImage: Ellipse,
@@ -50,8 +51,8 @@ const slides: Slide[] = [
     image: furniture,
     category: "Furniture",
     title: "Modern Furniture",
-    description: "Elegant furniture to transform your home hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh.",
-    shopDescription: "Elegant furniture to transform your home hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh.",
+    description: "Good furniture combines comfort, durability, functionality, and attractive design..",
+    shopDescription: "Transform your space with beautiful, durable, and comfortable furniture designed to fit your style. Quality you can trust, comfort you’ll love.",
     buttonText: "Visit Shop",
     price: "5998Rwf",
     location: "Kigali",
@@ -65,8 +66,8 @@ const slides: Slide[] = [
     image: vegetable,
     category: "Vegetables",
     title: "Fresh Vegetables",
-    description: "Organic and fresh vegetables directly from farms hhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhh hhhhhhhhhhh hhhhhhhhhhh.",
-    shopDescription: "Organic and fresh vegetables directly from farms hhhhhhhhhhhhhhhhhhhhhhh hhhhhhhhhhhhhhhhhhhhhhhhh hhhhkkkkkkkkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkhhbbjbjbjcb jb jfjbjbfbj bjbjb kkkkkkkkkkkkkk hbububdbvrhbvyhbdhb  uefbu buffffffffffffffffffff ffffffffffffffffffffffffffff fffffffffffffffffffffffff.",
+    description: "Choosing fresh vegetables which is important because they generally provide better taste, texture, and nutritional include fresh spinach, carrots, tomatoes, cabbage, broccoli, green peppers, cucumbers, and lettuce.",
+    shopDescription: "Enjoy the taste of fresh, high-quality vegetables, carefully selected to bring you the best in every meal. From farm to your table, freshness you can see and taste!.",
     buttonText: "Visit Shop",
     price: "5000Rwf",
     location: "Remera",
@@ -80,8 +81,8 @@ const slides: Slide[] = [
     image: ball,
     category: "Sports",
     title: "Premium Sports Ball",
-    description: "High-quality professional sports equipment.",
-    shopDescription: "High-quality professional sports equipment.",
+    description: "A good football is designed to provide excellent performance, durability, and control during training and competitive matches",
+    shopDescription: "A high-quality, durable ball designed for excellent performance, comfort, and control. It has a strong outer surface, reliable shape retention, and a good grip, making it suitable for training, matches, and recreational play.",
     buttonText: "Visit Shop",
     price: "4900Rwf",
     location: "Kigali",
@@ -97,6 +98,7 @@ function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(true)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
@@ -252,7 +254,9 @@ function Hero() {
                   
                 </div>
                 <div className="mt-70 lg:mt-90 flex justify-center">
-                   <button className="absolute bottom-2 lg:bottom-4 right-3 lg:right-4 px-3 lg:px-3 border border-[#07f051] bg-[#3F4E40] text-white rounded-2xl lg:rounded-3xl font-bold flex items-center hover:bg-[#27bb56] text-sm lg:text-sm">
+                   <button 
+                    onClick={() => navigate('/shopnow')}
+                    className="absolute bottom-2 lg:bottom-4 right-3 lg:right-4 px-3 lg:px-3 border border-[#07f051] bg-[#3F4E40] text-white rounded-2xl lg:rounded-3xl font-bold flex items-center hover:bg-[#27bb56] text-sm lg:text-sm">
                     {slide.buttonText}
                   </button>
                 </div>
