@@ -8,17 +8,7 @@ export const HelpSupportView: React.FC = () => {
   const [ticketCategory, setTicketCategory] = useState('Payouts & MoMo');
   const [ticketPriority, setTicketPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [ticketMessage, setTicketMessage] = useState('');
-  const [submittedTickets, setSubmittedTickets] = useState<SupportTicket[]>([
-    {
-      id: 'TCK-9901',
-      subject: 'MoMo Payout Schedule verification',
-      category: 'Payouts & MoMo',
-      priority: 'Medium',
-      status: 'Resolved',
-      createdAt: 'Oct 01, 2026',
-      message: 'Confirmation of payout cycle to MTN MoMo account ending in 654.',
-    },
-  ]);
+  const [submittedTickets, setSubmittedTickets] = useState<SupportTicket[]>([]);
 
   const faqs = [
     {

@@ -10,6 +10,7 @@ import type {
   SellerShipment,
   SellerReview,
   SalesDataPoint,
+  SellerNotification,
 } from '../../types/seller';
 import {
   fetchCurrentSellerProfile,
@@ -18,9 +19,15 @@ import {
   deleteProductApi,
   fetchSellerOrdersApi,
   fetchShopReviewsApi,
+  deleteShopReviewApi,
+  fetchMySellerApplicationApi,
   deriveCustomersFromOrders,
   deriveShipmentsFromOrders,
+  fetchUserNotificationsApi,
+  markNotificationAsReadApi,
+  markAllNotificationsAsReadApi,
 } from '../redux/services/sellerService';
+import { setAuthToken } from '../redux/axiosConfig';
 
 // Subcomponents for the dashboard pages
 import { OverviewView } from '../components/seller/OverviewView';
@@ -126,6 +133,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const [customers, setCustomers] = useState<SellerCustomer[]>([]);
   const [shipments, setShipments] = useState<SellerShipment[]>([]);
   const [reviews, setReviews] = useState<SellerReview[]>([]);
+  const [notifications, setNotifications] = useState<SellerNotification[]>([]);
+  const [showNotifications, setShowNotifications] = useState<boolean>(false);
 
   // Load ALL real data from backend APIs
   const loadRealData = useCallback(async () => {
@@ -221,8 +230,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         setProducts(apiProducts);
       }
 
-      // 5. Fetch orders
-      const apiOrders = await fetchSellerOrdersApi();
+      // 5. Fetch orders from real database
+      const apiOrders = await fetchSellerOrdersApi(shopId);
       if (apiOrders.length > 0) {
         setOrders(apiOrders);
       }
@@ -246,6 +255,31 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       const apiReviews = await fetchShopReviewsApi(shopId);
       if (apiReviews.length > 0) {
         setReviews(apiReviews);
+      }
+
+      // 9. Fetch seller application status (GET /sellers/applications/me)
+      try {
+        const appRes = await fetchMySellerApplicationApi();
+        const appInfo = (appRes as any)?.application || (appRes as any)?.data || appRes;
+        if (appInfo && appInfo.status) {
+          setSellerProfile((prev) => ({
+            ...prev,
+            verificationStatus: appInfo.status,
+            isVerified: appInfo.status === 'APPROVED' || appInfo.status === 'VERIFIED' || prev.isVerified,
+          }));
+        }
+      } catch {
+        // ignore
+      }
+
+      // 10. Fetch notifications (GET /users/me/notifications)
+      try {
+        const notifs = await fetchUserNotificationsApi();
+        if (notifs && notifs.length > 0) {
+          setNotifications(notifs);
+        }
+      } catch {
+        // ignore
       }
 
       // Also merge recent reviews from dashboard data
@@ -275,42 +309,47 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
   // Product Actions
   const handleAddProduct = async (newProdData: Omit<SellerProduct, 'id'>) => {
-    const tempId = `prod-${Date.now()}`;
-    const newProduct: SellerProduct = {
-      ...newProdData,
-      id: tempId,
-    };
-
-    setProducts((prev) => [newProduct, ...prev]);
-
-    // Try posting to API in background
     try {
-      const result = await createProductApi({
+      const created = await createProductApi({
         name: newProdData.name,
         price: newProdData.price,
         description: newProdData.description,
         stock: newProdData.stockRemaining,
         category: newProdData.category,
+        image: newProdData.image,
+        shopId: sellerProfile.shopId,
       });
-      // Update with real ID if returned
-      const realId = (result as any)?.data?.id || (result as any)?.id;
-      if (realId) {
-        setProducts((prev) => prev.map((p) => (p.id === tempId ? { ...p, id: realId } : p)));
-      }
-      toast.success('Product created successfully!');
+      setProducts((prev) => [created, ...prev]);
+      toast.success('Product added successfully!');
     } catch {
-      toast.info('Product added locally. Will sync when connected.');
+      toast.error('Failed to add product.');
     }
+  };
+
+  const handleEditProduct = (updated: SellerProduct) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === updated.id ? updated : p))
+    );
   };
 
   const handleDeleteProduct = async (productId: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== productId));
-    // Try deleting from API
-    try {
-      await deleteProductApi(productId);
-    } catch {
-      // Already removed from UI
-    }
+    await deleteProductApi(productId);
+    toast.success('Product removed successfully.');
+  };
+
+  // Notifications Actions
+  const handleMarkAsRead = async (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    );
+    await markNotificationAsReadApi(id);
+  };
+
+  const handleMarkAllAsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    await markAllNotificationsAsReadApi();
+    toast.success('All notifications marked as read');
   };
 
   const handleUpdateProfile = (updated: Partial<SellerProfile>) => {
@@ -360,6 +399,26 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
   const handleUpgradePlan = () => {
     toast.success('Seller Pro Features: Detailed Analytics & Multi-Store access enabled!');
+  };
+
+  const handleLogout = () => {
+    // Clear all auth tokens
+    setAuthToken(null);
+    // Clear cached seller data
+    try {
+      localStorage.removeItem('seller_profile');
+      localStorage.removeItem('seller_products');
+      localStorage.removeItem('seller_orders');
+      localStorage.removeItem('user');
+      sessionStorage.clear();
+    } catch {
+      // ignore
+    }
+    toast.success('You have been signed out. See you soon!');
+    // Redirect to home / login page after a brief delay
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
   };
 
   const handleExportOrders = () => {
@@ -498,6 +557,19 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             Upgrade Now
           </button>
         </div>
+
+        {/* Logout Button */}
+        <button
+          id="seller-logout-btn"
+          onClick={handleLogout}
+          className="mt-4 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors group"
+          title="Sign out of Seller Portal"
+        >
+          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span>Log Out</span>
+        </button>
       </aside>
 
       {/* Main Content Area */}
@@ -540,8 +612,79 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             </form>
           </div>
 
-          {/* Seller Profile Information (Live Data) */}
+          {/* Seller Profile & Notification Bell (Live Data) */}
           <div className="flex items-center gap-3">
+            {/* Notification Bell */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-xl text-gray-600 hover:text-black hover:bg-gray-100 transition-colors focus:outline-none"
+                title="Notifications"
+                aria-label="View notifications"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {notifications.filter((n) => !n.isRead).length > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
+                    {notifications.filter((n) => !n.isRead).length}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Popover Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-gray-900">Notifications</span>
+                      <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                        {notifications.filter((n) => !n.isRead).length} New
+                      </span>
+                    </div>
+                    {notifications.filter((n) => !n.isRead).length > 0 && (
+                      <button
+                        onClick={handleMarkAllAsRead}
+                        className="text-xs text-emerald-700 hover:text-emerald-900 font-semibold"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                    {notifications.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-gray-400">
+                        No notifications at this time
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => handleMarkAsRead(n.id)}
+                          className={`p-3.5 hover:bg-gray-50/80 cursor-pointer transition-colors ${
+                            !n.isRead ? 'bg-emerald-50/30' : ''
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <h5 className="font-semibold text-xs text-gray-900 leading-tight">
+                              {n.title}
+                            </h5>
+                            <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                              {n.createdAt}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-600 mt-1 leading-relaxed">
+                            {n.message}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div
               className="w-10 h-10 rounded-full bg-[#0C6227] text-white flex items-center justify-center font-bold text-sm shadow-xs select-none border border-emerald-800 shrink-0"
               title={sellerProfile.name}
@@ -561,6 +704,19 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               </div>
               <p className="text-[11px] text-gray-500">{sellerProfile.email}</p>
             </div>
+
+            {/* Header Logout Button */}
+            <button
+              id="seller-header-logout-btn"
+              onClick={handleLogout}
+              title="Sign out"
+              aria-label="Log out"
+              className="ml-1 p-2 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors focus:outline-none"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
         </header>
 
@@ -587,6 +743,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               products={products}
               onAddProduct={handleAddProduct}
               onDeleteProduct={handleDeleteProduct}
+              onEditProduct={handleEditProduct}
+              shopId={sellerProfile.shopId}
             />
           )}
 
@@ -598,6 +756,11 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             <OrderView
               orders={orders}
               onExport={handleExportOrders}
+              onUpdateStatus={(orderId, st) => {
+                setOrders((prev) =>
+                  prev.map((o) => (o.id === orderId ? { ...o, status: st } : o))
+                );
+              }}
             />
           )}
 
@@ -613,7 +776,14 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           )}
 
           {activeTab === 'Feedback' && (
-            <FeedbackView reviews={reviews} />
+            <FeedbackView
+              reviews={reviews}
+              shopId={sellerProfile.shopId}
+              onDeleteReview={async (reviewId) => {
+                setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+                await deleteShopReviewApi(reviewId, sellerProfile.shopId);
+              }}
+            />
           )}
 
           {activeTab === 'Help & Support' && <HelpSupportView />}

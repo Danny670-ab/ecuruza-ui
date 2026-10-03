@@ -16,18 +16,38 @@ const axiosInstance = axios.create({
 export function setAuthToken(token?: string | null, persist = true) {
 	if (token) {
 		axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-		if (persist) {
-			try { localStorage.setItem('token', token); } catch { /* ignore if not available */ }
-		}
+		try {
+			localStorage.setItem('token', token);
+			sessionStorage.setItem('token', token);
+		} catch { /* ignore if not available */ }
 	} else {
 		delete axiosInstance.defaults.headers.common['Authorization'];
-		try { localStorage.removeItem('token'); } catch { /* ignore */ }
+		try {
+			localStorage.removeItem('token');
+			sessionStorage.removeItem('token');
+		} catch { /* ignore */ }
 	}
 }
 
+// Request interceptor: dynamically inject Bearer token on every outgoing request
+axiosInstance.interceptors.request.use(
+	(config) => {
+		try {
+			const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+			if (token && !config.headers['Authorization']) {
+				config.headers['Authorization'] = `Bearer ${token}`;
+			}
+		} catch {
+			// ignore
+		}
+		return config;
+	},
+	(error) => Promise.reject(error)
+);
+
 // If there's a token saved in localStorage, attach it on init
 try {
-	const saved = localStorage.getItem('token');
+	const saved = localStorage.getItem('token') || sessionStorage.getItem('token');
 	if (saved) setAuthToken(saved);
 } catch {
 	// running in non-browser environment; ignore
@@ -37,7 +57,6 @@ try {
 axiosInstance.interceptors.response.use(
 	(response) => response,
 	(error) => {
-		// Optionally handle 401 (logout) or refresh token here.
 		return Promise.reject(error);
 	}
 );

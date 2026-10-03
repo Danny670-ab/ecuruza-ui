@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { SellerOrder } from '../../types/seller';
 import { toast } from 'react-toastify';
+import { updateOrderStatusApi } from '../../redux/services/sellerService';
 
 interface OrderViewProps {
   orders?: SellerOrder[];
   onExport?: () => void;
+  onUpdateStatus?: (orderId: string, status: string) => void;
 }
 
-export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExport }) => {
+export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExport, onUpdateStatus }) => {
   const [activeStatusTab, setActiveStatusTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<SellerOrder | null>(null);
@@ -27,9 +29,11 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExpo
     return [
       { label: 'All', count: orderList.length },
       { label: 'Pending', count: orderList.filter((o) => o.status === 'Pending').length },
+      { label: 'Processing', count: orderList.filter((o) => o.status === 'Processing').length },
       { label: 'Confirmed', count: orderList.filter((o) => o.status === 'Confirmed').length },
       { label: 'Shipped', count: orderList.filter((o) => o.status === 'Shipped').length },
       { label: 'Delivered', count: orderList.filter((o) => o.status === 'Delivered').length },
+      { label: 'Cancelled', count: orderList.filter((o) => o.status === 'Cancelled').length },
     ];
   }, [orderList]);
 
@@ -45,14 +49,22 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExpo
     });
   }, [orderList, searchTerm, activeStatusTab]);
 
-  const handleUpdateStatus = (orderId: string, newStatus: string) => {
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     setOrderList((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
     );
     if (selectedOrder && selectedOrder.id === orderId) {
       setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
     }
-    toast.success(`Order status updated to: ${newStatus}`);
+    if (onUpdateStatus) {
+      onUpdateStatus(orderId, newStatus);
+    }
+    try {
+      await updateOrderStatusApi(orderId, newStatus);
+      toast.success(`Order status updated to: ${newStatus}`);
+    } catch {
+      toast.info(`Status updated to ${newStatus} locally`);
+    }
   };
 
   return (
@@ -248,7 +260,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExpo
               <div>
                 <span className="text-xs font-bold text-gray-700 block mb-2">Update Order Status</span>
                 <div className="flex flex-wrap gap-2">
-                  {['Pending', 'Confirmed', 'Shipped', 'Delivered'].map((st) => (
+                  {['Pending', 'Processing', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'].map((st) => (
                     <button
                       key={st}
                       onClick={() => handleUpdateStatus(selectedOrder.id, st)}

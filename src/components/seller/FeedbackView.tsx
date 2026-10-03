@@ -1,15 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { SellerReview } from '../../types/seller';
 import { toast } from 'react-toastify';
+import { deleteShopReviewApi } from '../../redux/services/sellerService';
 
 interface FeedbackViewProps {
   reviews?: SellerReview[];
+  shopId?: string;
+  onDeleteReview?: (reviewId: string) => Promise<void> | void;
 }
 
-export const FeedbackView: React.FC<FeedbackViewProps> = ({ reviews: propReviews }) => {
+export const FeedbackView: React.FC<FeedbackViewProps> = ({
+  reviews: propReviews,
+  shopId,
+  onDeleteReview,
+}) => {
   const [selectedRating, setSelectedRating] = useState<number | 'All'>('All');
   const [replyTextMap, setReplyTextMap] = useState<Record<string, string>>({});
   const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Use prop reviews when available (from API), otherwise empty
   const [reviewList, setReviewList] = useState<SellerReview[]>(propReviews || []);
@@ -55,6 +63,24 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ reviews: propReviews
     setReplyTextMap((prev) => ({ ...prev, [reviewId]: '' }));
     setActiveReplyId(null);
     toast.success('Your response has been published to the buyer!');
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!window.confirm('Are you sure you want to remove this review?')) return;
+    setDeletingId(reviewId);
+    try {
+      if (onDeleteReview) {
+        await onDeleteReview(reviewId);
+      } else {
+        await deleteShopReviewApi(reviewId, shopId);
+      }
+      setReviewList((prev) => prev.filter((r) => r.id !== reviewId));
+      toast.success('Review removed successfully');
+    } catch {
+      toast.error('Failed to remove review');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -212,48 +238,62 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ reviews: propReviews
                 </div>
               )}
 
-              {/* Reply Button / Drawer */}
-              {!rev.sellerReply && (
-                <div>
-                  {activeReplyId === rev.id ? (
-                    <div className="mt-3 space-y-2">
-                      <textarea
-                        rows={2}
-                        value={replyTextMap[rev.id] || ''}
-                        onChange={(e) =>
-                          setReplyTextMap((prev) => ({ ...prev, [rev.id]: e.target.value }))
-                        }
-                        placeholder="Write a public reply to this review..."
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
-                      />
-                      <div className="flex items-center gap-2 justify-end">
-                        <button
-                          onClick={() => setActiveReplyId(null)}
-                          className="rounded-lg px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => handlePostReply(rev.id)}
-                          className="rounded-lg bg-[#324035] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#222529]"
-                        >
-                          Post Reply
-                        </button>
+              {/* Actions: Reply and Delete Review (DELETE /shop/{id}/reviews/{reviewId}) */}
+              <div className="flex items-center justify-between pt-1">
+                {!rev.sellerReply ? (
+                  <div>
+                    {activeReplyId === rev.id ? (
+                      <div className="mt-3 space-y-2">
+                        <textarea
+                          rows={2}
+                          value={replyTextMap[rev.id] || ''}
+                          onChange={(e) =>
+                            setReplyTextMap((prev) => ({ ...prev, [rev.id]: e.target.value }))
+                          }
+                          placeholder="Write a public reply to this review..."
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+                        />
+                        <div className="flex items-center gap-2 justify-end">
+                          <button
+                            onClick={() => setActiveReplyId(null)}
+                            className="rounded-lg px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handlePostReply(rev.id)}
+                            className="rounded-lg bg-[#324035] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#222529]"
+                          >
+                            Post Reply
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setActiveReplyId(rev.id)}
-                      className="text-xs font-bold text-[#324035] hover:underline flex items-center gap-1"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                      </svg>
-                      Reply to Customer
-                    </button>
-                  )}
-                </div>
-              )}
+                    ) : (
+                      <button
+                        onClick={() => setActiveReplyId(rev.id)}
+                        className="text-xs font-bold text-[#324035] hover:underline flex items-center gap-1"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                        Reply to Customer
+                      </button>
+                    )}
+                  </div>
+                ) : <div />}
+
+                <button
+                  onClick={() => handleDeleteReview(rev.id)}
+                  disabled={deletingId === rev.id}
+                  className="text-xs font-medium text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors px-2 py-1 rounded-md hover:bg-red-50"
+                  title="Delete review from shop"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  {deletingId === rev.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           ))
         )}

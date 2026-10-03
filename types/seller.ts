@@ -135,3 +135,60 @@ export interface SupportTicket {
   createdAt: string;
   message: string;
 }
+
+export interface SellerApplication {
+  id?: string;
+  sellerId?: string;
+  businessName?: string;
+  businessType?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'UNDER_REVIEW' | string;
+  documents?: Array<{ type: string; url: string }>;
+  reviewNotes?: string;
+  reviewedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SellerOnboardingPayload {
+  businessName: string;
+  businessType?: string;
+  businessAddress?: string;
+  businessPhone?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  idDocumentUrl?: string;
+  businessLicenseUrl?: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  name: string;
+  sku?: string;
+  price: number;
+  stock: number;
+  attributes?: Record<string, string>;
+  createdAt?: string;
+}
+
+export interface SellerNotification {
+  id: string;
+  title: string;
+  message: string;
+  type?: 'order' | 'review' | 'verification' | 'system' | string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface SellerMessage {
+  id: string;
+  senderName: string;
+  senderEmail?: string;
+  senderAvatar?: string;
+  subject: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}

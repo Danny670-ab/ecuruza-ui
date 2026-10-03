@@ -65,7 +65,7 @@ const Login: React.FC = () => {
       let user = resp?.user ?? resp?.data?.user ?? null
 
       if (token) {
-        setAuthToken(token, remember)
+        setAuthToken(token, true)
       }
 
       // Check whether user is a seller:
