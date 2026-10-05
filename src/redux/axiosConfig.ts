@@ -17,8 +17,11 @@ export function setAuthToken(token?: string | null, persist = true) {
 	if (token) {
 		axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 		try {
-			localStorage.setItem('token', token);
-			sessionStorage.setItem('token', token);
+			if (persist) {
+				localStorage.setItem('token', token);
+			} else {
+				sessionStorage.setItem('token', token);
+			}
 		} catch { /* ignore if not available */ }
 	} else {
 		delete axiosInstance.defaults.headers.common['Authorization'];

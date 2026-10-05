@@ -4,7 +4,6 @@ import { toast } from 'react-toastify';
 import {
   updateSellerProfileApi,
   updateShopApi,
-  createShopApi,
   updateSellerBusinessApi,
   submitSellerOnboardingApi,
   fetchMySellerApplicationApi,
@@ -27,6 +26,8 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
   const [savingBusiness, setSavingBusiness] = useState(false);
   const [submittingOnboarding, setSubmittingOnboarding] = useState(false);
   const [applicationData, setApplicationData] = useState<any>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
 
   // Security & Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -38,9 +39,16 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   // Business verification state (POST /sellers/onboarding & PUT /sellers/business)
-  const [businessData, setBusinessData] = useState({
+  const [businessData, setBusinessData] = useState<{
+    businessName: string;
+    businessType: 'INDIVIDUAL' | 'COMPANY';
+    businessAddress: string;
+    businessPhone: string;
+    registrationNumber: string;
+    taxId: string;
+  }>({
     businessName: seller.businessName || seller.storeName || '',
-    businessType: seller.businessType || 'Retailer',
+    businessType: seller.businessType === 'COMPANY' ? 'COMPANY' : 'INDIVIDUAL',
     businessAddress: seller.businessAddress || 'Kigali, Rwanda',
     businessPhone: seller.phone || '',
     registrationNumber: '',
@@ -75,14 +83,6 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
 
   // Form states initialized from seller or defaults
   const [settings, setSettings] = useState<StoreSettings>(() => {
-    const saved = localStorage.getItem('store_settings');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // ignore
-      }
-    }
     return {
       storeName: seller.storeName || seller.businessName || 'My Store',
       slug: seller.slug || (seller.storeName || 'my-store').toLowerCase().replace(/\s+/g, '-'),
@@ -92,8 +92,8 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
       whatsapp: '',
       address: seller.businessAddress || '',
       city: 'Kigali, Rwanda',
-      bannerUrl: '',
-      logoUrl: seller.avatar || '',
+      bannerUrl: seller.storeBanner || '',
+      logoUrl: seller.storeLogo || '',
       openingHours: 'Mon - Sat: 8:00 AM - 7:00 PM',
       paymentMethod: 'MTN Mobile Money',
       momoNumber: '',
@@ -102,59 +102,112 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
     };
   });
 
+  const [logoPreview, setLogoPreview] = useState(settings.logoUrl || '');
+  const [bannerPreview, setBannerPreview] = useState(settings.bannerUrl || '');
+
+  useEffect(() => {
+    setSettings((prev) => ({
+      ...prev,
+      storeName: seller.storeName || prev.storeName,
+      logoUrl: seller.storeLogo || prev.logoUrl,
+      bannerUrl: seller.storeBanner || prev.bannerUrl,
+    }));
+  }, [seller.storeName, seller.storeLogo, seller.storeBanner]);
+
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreview(settings.logoUrl || '');
+      return;
+    }
+    const previewUrl = URL.createObjectURL(logoFile);
+    setLogoPreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [logoFile, settings.logoUrl]);
+
+  useEffect(() => {
+    if (!bannerFile) {
+      setBannerPreview(settings.bannerUrl || '');
+      return;
+    }
+    const previewUrl = URL.createObjectURL(bannerFile);
+    setBannerPreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [bannerFile, settings.bannerUrl]);
+
+  const selectImageFile = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    imageType: 'logo' | 'banner'
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Choose a JPEG, PNG, GIF, or WebP image.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Images must be 5 MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    if (imageType === 'logo') setLogoFile(file);
+    else setBannerFile(file);
+  };
+
   const handleChange = <K extends keyof StoreSettings>(key: K, value: StoreSettings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if ((logoFile || bannerFile) && !seller.shopId) {
+      toast.error('A shop must be selected before uploading images.');
+      return;
+    }
     setSaving(true);
     try {
-      // 1. Update in parent component
-      onUpdateProfile({
-        storeName: settings.storeName,
-        storeDescription: settings.bio,
-        phone: settings.phone,
-        avatar: settings.logoUrl,
-        businessAddress: `${settings.address}, ${settings.city}`,
-      });
-
-      // 2. Persist locally
-      localStorage.setItem('store_settings', JSON.stringify(settings));
-
-      // 3. Sync seller profile to API backend (PUT /sellers/profile)
+      // 1. Sync seller profile to API backend (PUT /sellers/profile)
       await updateSellerProfileApi({
         businessName: settings.storeName,
         businessAddress: `${settings.address}, ${settings.city}`,
         phone: settings.phone,
       });
 
-      // 4. Sync shop details to API backend (PUT /shop/{id} or POST /shop)
+      let savedLogoUrl = settings.logoUrl;
+      let savedBannerUrl = settings.bannerUrl;
+
+      // 2. Sync shop details when this seller has a shop ID.
       if (seller.shopId) {
-        await updateShopApi(seller.shopId, {
+        const response = await updateShopApi(seller.shopId, {
           name: settings.storeName,
           description: settings.bio,
           address: `${settings.address}, ${settings.city}`,
           phone: settings.phone,
           slug: settings.slug,
-          banner: settings.bannerUrl,
-          logo: settings.logoUrl,
+          logoFile,
+          bannerFile,
         });
-      } else {
-        const createdShop = await createShopApi({
-          name: settings.storeName,
-          description: settings.bio,
-          address: `${settings.address}, ${settings.city}`,
-          phone: settings.phone,
-          slug: settings.slug,
-          banner: settings.bannerUrl,
-          logo: settings.logoUrl,
-        });
-        const createdId = (createdShop as any)?.id || (createdShop as any)?.shop?.id;
-        if (createdId) {
-          onUpdateProfile({ shopId: createdId });
-        }
+        const shop = (response as any)?.shop || response;
+        const imageUrl = (value: unknown) =>
+          typeof value === 'string' ? value : (value as any)?.url || (value as any)?.secure_url || '';
+        savedLogoUrl = imageUrl(shop?.logo) || savedLogoUrl;
+        savedBannerUrl = imageUrl(shop?.banner) || savedBannerUrl;
       }
+
+      onUpdateProfile({
+        storeName: settings.storeName,
+        storeDescription: settings.bio,
+        phone: settings.phone,
+        storeLogo: savedLogoUrl,
+        storeBanner: savedBannerUrl,
+        businessAddress: `${settings.address}, ${settings.city}`,
+      });
+      setSettings((prev) => ({ ...prev, logoUrl: savedLogoUrl, bannerUrl: savedBannerUrl }));
+      setLogoFile(null);
+      setBannerFile(null);
 
       toast.success('Store settings saved successfully!');
     } catch (err) {
@@ -174,9 +227,6 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         businessName: businessData.businessName,
         businessType: businessData.businessType,
         businessAddress: businessData.businessAddress,
-        phone: businessData.businessPhone,
-        registrationNumber: businessData.registrationNumber,
-        taxId: businessData.taxId,
       });
       onUpdateProfile({
         businessName: businessData.businessName,
@@ -204,9 +254,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         businessName: businessData.businessName,
         businessType: businessData.businessType,
         businessAddress: businessData.businessAddress,
-        businessPhone: businessData.businessPhone,
-        registrationNumber: businessData.registrationNumber,
-        taxId: businessData.taxId,
+        country: 'Rwanda',
+        city: 'Kigali',
+        taxId: businessData.taxId || businessData.registrationNumber,
       });
       setApplicationData(res || { status: 'PENDING' });
       toast.success('Business verification submitted for onboarding review!');
@@ -346,7 +396,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
               <span className="block text-xs font-bold text-gray-700">Store Visual Preview</span>
               <div className="relative rounded-xl overflow-hidden bg-gray-100 h-36 border border-gray-200">
                 <img
-                  src={settings.bannerUrl}
+                  src={bannerPreview}
                   alt="Store Banner"
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -356,7 +406,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                 />
                 <div className="absolute bottom-3 left-4 flex items-center gap-3">
                   <img
-                    src={settings.logoUrl}
+                    src={logoPreview}
                     alt="Store Logo"
                     className="w-14 h-14 rounded-full border-2 border-white object-cover shadow-md"
                     onError={(e) => {
@@ -412,23 +462,25 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Store Logo URL</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Store Logo</label>
                 <input
-                  type="url"
-                  value={settings.logoUrl}
-                  onChange={(e) => handleChange('logoUrl', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={(event) => selectImageFile(event, 'logo')}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
                 />
+                <p className="mt-1 text-[11px] text-gray-500">JPEG, PNG, GIF, or WebP. Maximum 5 MB.</p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Store Banner URL</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Store Banner</label>
                 <input
-                  type="url"
-                  value={settings.bannerUrl}
-                  onChange={(e) => handleChange('bannerUrl', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={(event) => selectImageFile(event, 'banner')}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
                 />
+                <p className="mt-1 text-[11px] text-gray-500">JPEG, PNG, GIF, or WebP. Maximum 5 MB.</p>
               </div>
             </div>
           </div>
@@ -574,14 +626,11 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                 <label className="block text-xs font-bold text-gray-700 mb-1">Business Structure / Type</label>
                 <select
                   value={businessData.businessType}
-                  onChange={(e) => setBusinessData({ ...businessData, businessType: e.target.value })}
+                  onChange={(e) => setBusinessData({ ...businessData, businessType: e.target.value as 'INDIVIDUAL' | 'COMPANY' })}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
                 >
-                  <option value="Retailer">Retailer / Sole Trader</option>
-                  <option value="Wholesaler">Wholesaler & Distributor</option>
-                  <option value="Registered Company">Registered Company (Ltd)</option>
-                  <option value="Cooperative">Rwandan Cooperative</option>
-                  <option value="Manufacturer">Manufacturer</option>
+                  <option value="INDIVIDUAL">Individual / Sole Trader</option>
+                  <option value="COMPANY">Registered Company (Ltd)</option>
                 </select>
               </div>
             </div>

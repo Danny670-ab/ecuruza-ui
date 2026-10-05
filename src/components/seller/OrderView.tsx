@@ -50,20 +50,21 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExpo
   }, [orderList, searchTerm, activeStatusTab]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
-    setOrderList((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-    );
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
-    }
-    if (onUpdateStatus) {
-      onUpdateStatus(orderId, newStatus);
-    }
     try {
-      await updateOrderStatusApi(orderId, newStatus);
+      const updated = await updateOrderStatusApi(orderId, newStatus);
+      if (!updated) throw new Error('Order status update was not confirmed by the server.');
+      setOrderList((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+      );
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+      }
+      if (onUpdateStatus) {
+        onUpdateStatus(orderId, newStatus);
+      }
       toast.success(`Order status updated to: ${newStatus}`);
     } catch {
-      toast.info(`Status updated to ${newStatus} locally`);
+      toast.error('Could not update order status on the server.');
     }
   };
 

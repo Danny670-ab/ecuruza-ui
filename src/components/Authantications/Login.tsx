@@ -21,12 +21,10 @@ const Login: React.FC = () => {
     // If already logged in as a seller, redirect directly to seller dashboard
     try {
       const savedToken = localStorage.getItem('token')
-      const savedSeller = localStorage.getItem('seller_profile')
       const savedUserStr = localStorage.getItem('user')
       if (savedToken) {
         const parsedUser = savedUserStr ? JSON.parse(savedUserStr) : null
         const isSellerUser =
-          Boolean(savedSeller) ||
           String(parsedUser?.role || '').toUpperCase() === 'SELLER' ||
           Boolean(parsedUser?.isSeller)
         if (isSellerUser) {
@@ -122,22 +120,6 @@ const Login: React.FC = () => {
           }
         } catch {
           // not found or not a seller
-        }
-
-        // Probe /shop/my-shop
-        if (!isSeller) {
-          try {
-            const shopRes = await axios.get(`${backendUrl}/shop/my-shop`, {
-              headers: authHeaders,
-              timeout: 5000,
-            })
-            const sData = shopRes.data?.data || shopRes.data
-            if (shopRes.status === 200 && sData && !sData.error && (sData.shop || sData.id || sData.name)) {
-              isSeller = true
-            }
-          } catch {
-            // ignore
-          }
         }
 
         // Probe /sellers/dashboard
@@ -251,15 +233,6 @@ const Login: React.FC = () => {
             storeName: user?.businessName || `${name}'s Store`,
             isVerified: true,
           }
-        }
-      }
-
-      // Persist seller profile or user details
-      if (sellerProfileData) {
-        try {
-          localStorage.setItem('seller_profile', JSON.stringify(sellerProfileData))
-        } catch {
-          // ignore
         }
       }
 

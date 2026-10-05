@@ -85,16 +85,9 @@ function getAuthToken(): string | null {
   }
 }
 
-// ─── Purge any stale mock data from localStorage on module load ───────────────
+// Remove legacy seller API snapshots; seller records must come from the API.
 try {
-  const cachedProds = localStorage.getItem('seller_products');
-  if (cachedProds && cachedProds.includes('prod-101')) {
-    localStorage.removeItem('seller_products');
-  }
-  const cachedOrders = localStorage.getItem('seller_orders');
-  if (cachedOrders && cachedOrders.includes('ord-801')) {
-    localStorage.removeItem('seller_orders');
-  }
+  ['seller_profile', 'seller_products', 'seller_orders'].forEach((key) => localStorage.removeItem(key));
 } catch {
   // ignore
 }
@@ -117,12 +110,6 @@ export async function fetchCurrentSellerProfile(): Promise<{
   let dashboardData: SellerDashboardApiResponse | null = null;
   let shop: Record<string, unknown> | null = null;
   let shopStats: Record<string, unknown> | null = null;
-
-  // Load cached profile for instant render
-  try {
-    const saved = localStorage.getItem('seller_profile');
-    if (saved) profile = JSON.parse(saved);
-  } catch { /* ignore */ }
 
   const token = getAuthToken();
   if (!token) return { profile, dashboardData, shop, shopStats };
@@ -148,6 +135,8 @@ export async function fetchCurrentSellerProfile(): Promise<{
       phone: user.phone || '',
       avatar: user.avatarUrl || '',
       storeName: firstShop.name || seller.businessName || 'My Store',
+      storeLogo: typeof firstShop.logo === 'string' ? firstShop.logo : firstShop.logo?.url || '',
+      storeBanner: typeof firstShop.banner === 'string' ? firstShop.banner : firstShop.banner?.url || '',
       businessName: seller.businessName,
       businessType: seller.businessType || 'INDIVIDUAL',
       businessAddress: seller.businessAddress || '',
@@ -156,31 +145,11 @@ export async function fetchCurrentSellerProfile(): Promise<{
       shopId: firstShop.id || undefined,
     };
 
-    try { localStorage.setItem('seller_profile', JSON.stringify(profile)); } catch { /* ignore */ }
   } catch { /* silent — 401 or no seller yet */ }
 
-  // GET /api/v1/sellers/dashboard — response: { success, message, data: { overview, monthlyStats, recentOrders, lowStockAlerts, recentReviews } }
-  try {
-    const res = await axiosInstance.get('/sellers/dashboard');
-    const d = res.data?.data || res.data;
-    if (d && !d.error) dashboardData = d;
-  } catch { /* silent */ }
-
-  // GET /api/v1/shop/my-shop — response: shop object
-  try {
-    const res = await axiosInstance.get('/shop/my-shop');
-    const d = res.data?.data || res.data;
-    shop = d?.shop || d;
-    if (profile && shop?.name) profile.storeName = String(shop.name);
-    if (profile && shop?.id) profile.shopId = String(shop.id);
-  } catch { /* silent */ }
-
-  // GET /api/v1/shop/my-shop/stats — response: { views, rating, reviewsCount, ... }
-  try {
-    const res = await axiosInstance.get('/shop/my-shop/stats');
-    const d = res.data?.data || res.data;
-    if (d && !d.error) shopStats = d;
-  } catch { /* silent */ }
+  // The live Swagger/backend currently does not reliably expose these seller dashboard/shop stats endpoints.
+  // Do not call them in the app until the backend confirms they exist; otherwise the dashboard produces noisy 404/500 errors.
+  // Keep the seller profile call above as the only confirmed seller endpoint in this flow.
 
   return { profile, dashboardData, shop, shopStats };
 }
@@ -257,55 +226,16 @@ function mapRawProduct(p: any, idx = 0, shopId?: string): SellerProduct {
 
 export async function fetchProducts(shopId?: string): Promise<SellerProduct[]> {
   const token = getAuthToken();
-  if (!token) {
-    // Try cached
-    try {
-      const saved = localStorage.getItem('seller_products');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch { /* ignore */ }
+  if (!token || !shopId) return [];
+
+  try {
+    const res = await axiosInstance.get(`/products/shop/${shopId}`);
+    const d = res.data?.data || res.data;
+    const items = Array.isArray(d) ? d : d?.products || d?.items || [];
+    return items.map((product: any, index: number) => mapRawProduct(product, index, shopId));
+  } catch {
     return [];
   }
-
-  let items: any[] = [];
-
-  // 1. Try GET /products/shop/{shopId} if we have a shopId
-  if (shopId) {
-    try {
-      const res = await axiosInstance.get(`/products/shop/${shopId}`);
-      const d = res.data?.data || res.data;
-      const list = Array.isArray(d) ? d : d?.products || d?.items || [];
-      if (list.length > 0) items = list;
-    } catch { /* fall through */ }
-  }
-
-  // 2. Fallback: GET /products/all
-  if (items.length === 0) {
-    try {
-      const res = await axiosInstance.get('/products/all');
-      const d = res.data?.data || res.data;
-      const list = Array.isArray(d) ? d : d?.products || d?.items || [];
-      if (list.length > 0) items = list;
-    } catch { /* fall through */ }
-  }
-
-  if (items.length === 0) {
-    // Return cached if API returned nothing
-    try {
-      const saved = localStorage.getItem('seller_products');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch { /* ignore */ }
-    return [];
-  }
-
-  const mapped = items.map((p, idx) => mapRawProduct(p, idx, shopId));
-  try { localStorage.setItem('seller_products', JSON.stringify(mapped)); } catch { /* ignore */ }
-  return mapped;
 }
 
 export async function fetchProductByIdApi(id: string): Promise<SellerProduct | null> {
@@ -329,20 +259,37 @@ export async function createProductApi(productData: {
   price: number;
   description?: string;
   categoryId?: string;
+  category?: string;
+  stock?: number;
   shopId?: string;
   imageFile?: File | null;
+  image?: string;
 }): Promise<SellerProduct> {
   const token = getAuthToken();
+
+  if (!productData.name?.trim()) {
+    throw new Error('Product name is required');
+  }
+
+  if (!productData.shopId) {
+    throw new Error('Create or select a shop before adding a product');
+  }
 
   if (token) {
     try {
       const form = new FormData();
-      form.append('name', productData.name);
+      form.append('name', productData.name.trim());
       form.append('price', String(productData.price));
-      if (productData.description) form.append('description', productData.description);
+      if (productData.description) form.append('description', productData.description.trim());
       if (productData.shopId) form.append('shopId', productData.shopId);
       if (productData.categoryId) form.append('categoryId', productData.categoryId);
-      if (productData.imageFile) form.append('images', productData.imageFile);
+      if (productData.category && !productData.categoryId) form.append('category', productData.category);
+      if (productData.stock !== undefined && Number.isFinite(productData.stock) && productData.stock >= 0) {
+        form.append('stock', String(productData.stock));
+      }
+      if (productData.imageFile) {
+        form.append('images', productData.imageFile);
+      }
 
       const res = await axiosInstance.post('/products', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -350,14 +297,7 @@ export async function createProductApi(productData: {
       const d = res.data?.data || res.data;
       const product = d?.product || d;
       if (product && product.id) {
-        const mapped = mapRawProduct(product, 0, productData.shopId);
-        // Persist to local cache
-        try {
-          const saved = localStorage.getItem('seller_products');
-          const list: SellerProduct[] = saved ? JSON.parse(saved) : [];
-          localStorage.setItem('seller_products', JSON.stringify([mapped, ...list.filter(p => p.id !== mapped.id)]));
-        } catch { /* ignore */ }
-        return mapped;
+        return mapRawProduct(product, 0, productData.shopId);
       }
     } catch (err: any) {
       console.error('[createProductApi] error:', err?.response?.data || err.message);
@@ -392,29 +332,14 @@ export async function updateProductApi(
       const d = res.data?.data || res.data;
       const product = d?.product || d;
       if (product && product.id) {
-        const mapped = mapRawProduct(product, 0, productData.shopId);
-        try {
-          const saved = localStorage.getItem('seller_products');
-          const list: SellerProduct[] = saved ? JSON.parse(saved) : [];
-          localStorage.setItem('seller_products', JSON.stringify(list.map(p => p.id === id ? mapped : p)));
-        } catch { /* ignore */ }
-        return mapped;
+        return mapRawProduct(product, 0, productData.shopId);
       }
     } catch (err: any) {
       console.error('[updateProductApi] error:', err?.response?.data || err.message);
     }
   }
 
-  // Fallback: update local cache only
-  try {
-    const saved = localStorage.getItem('seller_products');
-    const list: SellerProduct[] = saved ? JSON.parse(saved) : [];
-    const updated = list.map(p => p.id === id ? { ...p, ...productData } : p);
-    localStorage.setItem('seller_products', JSON.stringify(updated));
-    return updated.find(p => p.id === id) || null;
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 /**
@@ -422,19 +347,14 @@ export async function updateProductApi(
  */
 export async function deleteProductApi(id: string): Promise<boolean> {
   const token = getAuthToken();
-  if (token) {
-    try {
-      await axiosInstance.delete(`/products/${id}`);
-    } catch (err: any) {
-      console.warn('[deleteProductApi] error:', err?.response?.data || err.message);
-    }
-  }
+  if (!token) return false;
   try {
-    const saved = localStorage.getItem('seller_products');
-    const list: SellerProduct[] = saved ? JSON.parse(saved) : [];
-    localStorage.setItem('seller_products', JSON.stringify(list.filter(p => p.id !== id)));
-  } catch { /* ignore */ }
-  return true;
+    await axiosInstance.delete(`/products/${id}`);
+    return true;
+  } catch (err: any) {
+    console.warn('[deleteProductApi] error:', err?.response?.data || err.message);
+    return false;
+  }
 }
 
 export async function fetchShopProductsApi(shopId: string): Promise<SellerProduct[]> {
@@ -473,12 +393,13 @@ export async function fetchProductVariantsApi(productId: string): Promise<Produc
 
 export async function createProductVariantApi(
   productId: string,
-  variantData: { sku: string; price: number; stock: number; attributes?: Record<string, string>; lowStockAlert?: number }
+  variantData: { name?: string; sku?: string; price: number; stock: number; attributes?: Record<string, string>; lowStockAlert?: number }
 ): Promise<ProductVariant> {
   // POST /api/v1/products/{productId}/variants
   // Required: sku, price, stock
   const payload = {
-    sku: variantData.sku,
+    name: variantData.name,
+    sku: variantData.sku || '',
     price: variantData.price,
     stock: variantData.stock,
     quantity: variantData.stock, // docs say quantity defaults to stock
@@ -607,31 +528,7 @@ export function mapRawOrdersToSellerOrders(items: any[]): SellerOrder[] {
   });
 }
 
-export async function fetchSellerOrdersApi(shopId?: string): Promise<SellerOrder[]> {
-  const token = getAuthToken();
-  if (!token) return [];
-
-  // GET /api/v1/users/me/orders — the only orders endpoint confirmed in Swagger
-  try {
-    const res = await axiosInstance.get('/users/me/orders', { params: { limit: 100 } });
-    const d = res.data?.data || res.data;
-    const list = Array.isArray(d) ? d : d?.orders || d?.items || [];
-    if (list.length > 0) {
-      const mapped = mapRawOrdersToSellerOrders(list);
-      try { localStorage.setItem('seller_orders', JSON.stringify(mapped)); } catch { /* ignore */ }
-      return mapped;
-    }
-  } catch { /* fall through */ }
-
-  // Return cached orders if API returned nothing
-  try {
-    const saved = localStorage.getItem('seller_orders');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch { /* ignore */ }
-
+export async function fetchSellerOrdersApi(_shopId?: string): Promise<SellerOrder[]> {
   return [];
 }
 
@@ -648,15 +545,7 @@ export async function updateOrderStatusApi(orderId: string, status: string): Pro
       try { await attempt(); return true; } catch { /* try next */ }
     }
   }
-  // Update local cache
-  try {
-    const saved = localStorage.getItem('seller_orders');
-    if (saved) {
-      const list: SellerOrder[] = JSON.parse(saved);
-      localStorage.setItem('seller_orders', JSON.stringify(list.map(o => o.id === orderId ? { ...o, status } : o)));
-    }
-  } catch { /* ignore */ }
-  return true;
+  return false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -843,11 +732,22 @@ export async function createShopApi(shopData: {
   phone?: string;
   email?: string;
   address?: string;
+  slug?: string;
+  logo?: string;
+  banner?: string;
   logoFile?: File | null;
   bannerFile?: File | null;
 }): Promise<unknown> {
+  if (!shopData.name || !shopData.name.trim()) {
+    throw new Error('Shop name is required.');
+  }
+
+  if (shopData.name.trim().length < 2 || shopData.name.trim().length > 100) {
+    throw new Error('Shop name must be between 2 and 100 characters.');
+  }
+
   const form = new FormData();
-  form.append('name', shopData.name);
+  form.append('name', shopData.name.trim());
   if (shopData.description) form.append('description', shopData.description);
   if (shopData.phone) form.append('phone', shopData.phone);
   if (shopData.email) form.append('email', shopData.email);
@@ -869,34 +769,32 @@ export async function updateShopApi(
     phone?: string;
     email?: string;
     address?: string;
+    slug?: string;
     returnPolicy?: string;
     shippingPolicy?: string;
+    logo?: string;
+    banner?: string;
     logoFile?: File | null;
     bannerFile?: File | null;
   }
 ): Promise<unknown> {
+  if (!shopId) {
+    throw new Error('Select an existing shop before saving shop settings.');
+  }
+
   const form = new FormData();
   if (shopData.name) form.append('name', shopData.name);
   if (shopData.description) form.append('description', shopData.description);
   if (shopData.phone) form.append('phone', shopData.phone);
   if (shopData.email) form.append('email', shopData.email);
   if (shopData.address) form.append('address', shopData.address);
+  if (shopData.slug) form.append('slug', shopData.slug);
   if (shopData.returnPolicy) form.append('returnPolicy', shopData.returnPolicy);
   if (shopData.shippingPolicy) form.append('shippingPolicy', shopData.shippingPolicy);
   if (shopData.logoFile) form.append('logo', shopData.logoFile);
   if (shopData.bannerFile) form.append('banner', shopData.bannerFile);
 
-  if (shopId) {
-    try {
-      const res = await axiosInstance.put(`/shop/${shopId}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return res.data?.data || res.data;
-    } catch { /* fall through to create */ }
-  }
-
-  // Create shop if no shopId
-  const res = await axiosInstance.post('/shop', form, {
+  const res = await axiosInstance.put(`/shop/${shopId}`, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return res.data?.data || res.data;

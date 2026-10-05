@@ -26,6 +26,8 @@ import {
   fetchUserNotificationsApi,
   markNotificationAsReadApi,
   markAllNotificationsAsReadApi,
+  fetchMyShopApi,
+  createShopApi,
 } from '../redux/services/sellerService';
 import { setAuthToken } from '../redux/axiosConfig';
 
@@ -48,30 +50,9 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   seller: propSeller,
   initialTab = 'Overview',
 }) => {
-  // Initialize seller profile from prop, localStorage, or fallback
+  // Initialize from the current API-backed seller prop or a neutral placeholder.
   const [sellerProfile, setSellerProfile] = useState<SellerProfile>(() => {
     if (propSeller) return propSeller;
-
-    // Check if user or seller profile is cached in localStorage
-    try {
-      const savedSeller = localStorage.getItem('seller_profile');
-      if (savedSeller) return JSON.parse(savedSeller);
-
-      const savedUser = localStorage.getItem('user');
-      if (savedUser) {
-        const u = JSON.parse(savedUser);
-        const name = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.name || u.fullName || 'Seller';
-        return {
-          name,
-          email: u.email || 'seller@ecuruza.rw',
-          avatar: u.avatar || '',
-          storeName: u.businessName || `${name}'s Store`,
-          isVerified: u.isVerified ?? true,
-        };
-      }
-    } catch {
-      // Fallback
-    }
 
     return {
       name: 'Seller',
@@ -90,6 +71,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   // Seller Navigation Items matching original Figma spec
   const navItems = [
     { id: 'overview', label: 'Overview', icon: 'grid' },
+    { id: 'shops', label: 'Shops', icon: 'store' },
     { id: 'products', label: 'Products', icon: 'box' },
     { id: 'customer', label: 'Customer', icon: 'user' },
     { id: 'order', label: 'Order', icon: 'cart' },
@@ -134,6 +116,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const [shipments, setShipments] = useState<SellerShipment[]>([]);
   const [reviews, setReviews] = useState<SellerReview[]>([]);
   const [notifications, setNotifications] = useState<SellerNotification[]>([]);
+  const [shops, setShops] = useState<Array<{ id: string; name: string; slug?: string; status?: string }>>([]);
+  const [selectedShopId, setSelectedShopId] = useState<string | undefined>(sellerProfile.shopId);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
 
   // Load ALL real data from backend APIs
@@ -141,8 +125,39 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
     setIsLoading(true);
     try {
       // 1. Fetch seller profile + dashboard analytics + shop + shop stats
-      const { profile, dashboardData, shop, shopStats } = await fetchCurrentSellerProfile();
-      const shopId = profile?.shopId || (shop as any)?.id;
+      const [{ profile, dashboardData, shop, shopStats }, myShop] = await Promise.all([
+        fetchCurrentSellerProfile(),
+        fetchMyShopApi(),
+      ]);
+      const profileShops = Array.isArray((profile as any)?.shops) ? (profile as any).shops : [];
+      const currentShop = myShop || profileShops[0] || shop;
+
+      const normalizedShops = Array.from(
+        new Map(
+          [currentShop, ...profileShops]
+            .filter(Boolean)
+            .map((shopItem: any) => [String(shopItem.id || shopItem.slug || shopItem.name), shopItem])
+        ).values()
+      ) as Array<{ id: string; name: string; slug?: string; status?: string }>;
+
+      if (normalizedShops.length > 0) {
+        setShops(normalizedShops);
+        const preferredShop = normalizedShops.find((s) => s.id === (profile?.shopId || (shop as any)?.id || selectedShopId)) || normalizedShops[0];
+        if (preferredShop?.id) {
+          const logoValue = (preferredShop as any).logo;
+          const bannerValue = (preferredShop as any).banner;
+          setSelectedShopId(preferredShop.id);
+          setSellerProfile((prev) => ({
+            ...prev,
+            shopId: preferredShop.id,
+            storeName: preferredShop.name || prev.storeName,
+            storeLogo: typeof logoValue === 'string' ? logoValue : logoValue?.url || prev.storeLogo,
+            storeBanner: typeof bannerValue === 'string' ? bannerValue : bannerValue?.url || prev.storeBanner,
+          }));
+        }
+      }
+
+      const shopId = selectedShopId || profile?.shopId || (shop as any)?.id || (myShop as any)?.id || normalizedShops[0]?.id;
 
       // Update seller profile
       if (profile && (profile.name || profile.email)) {
@@ -155,11 +170,6 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             avatar: profile.avatar || prev.avatar,
             storeName: profile.storeName || prev.storeName,
           };
-          try {
-            localStorage.setItem('seller_profile', JSON.stringify(updated));
-          } catch {
-            // ignore
-          }
           return updated;
         });
       }
@@ -225,13 +235,15 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       }
 
       // 4. Fetch products for this shop
-      const apiProducts = await fetchProducts(shopId);
+      const apiProducts = shopId ? await fetchProducts(shopId) : [];
       if (apiProducts.length > 0) {
         setProducts(apiProducts);
+      } else {
+        setProducts([]);
       }
 
       // 5. Fetch orders from real database
-      const apiOrders = await fetchSellerOrdersApi(shopId);
+      const apiOrders = shopId ? await fetchSellerOrdersApi(shopId) : [];
       if (apiOrders.length > 0) {
         setOrders(apiOrders);
       }
@@ -252,9 +264,11 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       }
 
       // 8. Fetch shop reviews
-      const apiReviews = await fetchShopReviewsApi(shopId);
+      const apiReviews = shopId ? await fetchShopReviewsApi(shopId) : [];
       if (apiReviews.length > 0) {
         setReviews(apiReviews);
+      } else {
+        setReviews([]);
       }
 
       // 9. Fetch seller application status (GET /sellers/applications/me)
@@ -310,19 +324,24 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   // Product Actions
   const handleAddProduct = async (newProdData: Omit<SellerProduct, 'id'>) => {
     try {
+      if (!sellerProfile.shopId) {
+        toast.warning('Create or select a shop before adding a product.');
+        return;
+      }
+
       const created = await createProductApi({
         name: newProdData.name,
         price: newProdData.price,
         description: newProdData.description,
         stock: newProdData.stockRemaining,
         category: newProdData.category,
-        image: newProdData.image,
         shopId: sellerProfile.shopId,
       });
       setProducts((prev) => [created, ...prev]);
       toast.success('Product added successfully!');
-    } catch {
-      toast.error('Failed to add product.');
+    } catch (err: any) {
+      const message = err?.message || 'Failed to add product.';
+      toast.error(message);
     }
   };
 
@@ -333,8 +352,12 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   };
 
   const handleDeleteProduct = async (productId: string) => {
+    const deleted = await deleteProductApi(productId);
+    if (!deleted) {
+      toast.error('Could not delete product from the server.');
+      return;
+    }
     setProducts((prev) => prev.filter((p) => p.id !== productId));
-    await deleteProductApi(productId);
     toast.success('Product removed successfully.');
   };
 
@@ -354,13 +377,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
   const handleUpdateProfile = (updated: Partial<SellerProfile>) => {
     setSellerProfile((prev) => {
-      const merged = { ...prev, ...updated };
-      try {
-        localStorage.setItem('seller_profile', JSON.stringify(merged));
-      } catch {
-        // ignore
-      }
-      return merged;
+      return { ...prev, ...updated };
     });
   };
 
@@ -391,10 +408,64 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       setActiveTab('Shipment');
     } else if (q.includes('setting') || q.includes('momo') || q.includes('payout')) {
       setActiveTab('Store Setting');
+    } else if (q.includes('shop')) {
+      setActiveTab('Shops');
     } else {
       setActiveTab('Products');
     }
     toast.info(`Searching for "${searchQuery}" in ${activeTab}`);
+  };
+
+  const handleShopSelect = (shopId: string) => {
+    if (!shopId) return;
+    const selected = shops.find((shop) => shop.id === shopId);
+    setSelectedShopId(shopId);
+    setSellerProfile((prev) => ({
+      ...prev,
+      shopId,
+      storeName: selected?.name || prev.storeName,
+    }));
+    setActiveTab('Overview');
+  };
+
+  const handleCreateShop = async () => {
+    if (sellerProfile.shopId || shops.length > 0) {
+      toast.info('Your account already has a shop. Edit its details in Store Settings.');
+      setActiveTab('Store Setting');
+      return;
+    }
+
+    try {
+      const nextName = sellerProfile.storeName?.trim() || `${sellerProfile.name || 'My'} Shop`;
+      const created = await createShopApi({
+        name: nextName,
+      });
+      const createdShop = (created as any)?.shop || created;
+      const newId = createdShop?.id || `shop-${Date.now()}`;
+      const nextShop = {
+        id: String(newId),
+        name: createdShop?.name || nextName,
+        slug: createdShop?.slug,
+        status: createdShop?.status || 'Active',
+      };
+      setShops((prev) => [nextShop, ...prev]);
+      setSelectedShopId(nextShop.id);
+      setSellerProfile((prev) => ({
+        ...prev,
+        shopId: nextShop.id,
+        storeName: nextShop.name,
+      }));
+      toast.success('New shop created successfully.');
+      setActiveTab('Shops');
+    } catch (error: any) {
+      const message = error?.response?.data?.message;
+      if (typeof message === 'string' && message.toLowerCase().includes('already have a shop')) {
+        toast.info('Your account already has a shop. Edit its details in Store Settings.');
+        setActiveTab('Store Setting');
+        return;
+      }
+      toast.error(message || 'Unable to create a new shop right now.');
+    }
   };
 
   const handleUpgradePlan = () => {
@@ -612,8 +683,24 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             </form>
           </div>
 
-          {/* Seller Profile & Notification Bell (Live Data) */}
+          {/* Seller Profile & Shop Switcher */}
           <div className="flex items-center gap-3">
+            {shops.length > 0 && (
+              <div className="hidden md:flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">Shop</span>
+                <select
+                  value={selectedShopId || ''}
+                  onChange={(e) => handleShopSelect(e.target.value)}
+                  className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#324035]/30"
+                  aria-label="Select shop"
+                >
+                  {shops.map((shop) => (
+                    <option key={shop.id} value={shop.id}>{shop.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Notification Bell */}
             <div className="relative">
               <button
@@ -736,6 +823,72 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               isLoading={isLoading}
               onRefreshData={loadRealData}
             />
+          )}
+
+          {activeTab === 'Shops' && (
+            <div className="rounded-2xl border border-[#eaedf0] bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-3 pb-4 border-b border-gray-100">
+                <div>
+                  <h2 className="text-xl font-bold text-black">Shops</h2>
+                  <p className="text-xs text-gray-500">Manage all stores connected to this seller account</p>
+                </div>
+                <button
+                  onClick={handleCreateShop}
+                  className="rounded-xl bg-[#0C6227] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0b4f20]"
+                >
+                  + Add Shop
+                </button>
+              </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {shops.length === 0 ? (
+                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center text-sm text-gray-500">
+                    No shops yet. Add your first shop to begin selling.
+                  </div>
+                ) : (
+                  shops.map((shop) => {
+                    const isActive = selectedShopId === shop.id;
+                    return (
+                      <div
+                        key={shop.id}
+                        className={`rounded-2xl border p-4 transition-all ${
+                          isActive ? 'border-[#0C6227] bg-emerald-50/40 shadow-sm' : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">{shop.name}</p>
+                            <p className="text-[11px] text-gray-500 mt-1">{shop.slug || 'shop-slug'}</p>
+                          </div>
+                          <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${
+                            isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {isActive ? 'Selected' : shop.status || 'Active'}
+                          </span>
+                        </div>
+
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            onClick={() => handleShopSelect(shop.id)}
+                            className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold ${
+                              isActive ? 'bg-[#0C6227] text-white' : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {isActive ? 'Current Shop' : 'Select Shop'}
+                          </button>
+                          <button
+                            onClick={() => setActiveTab('Store Setting')}
+                            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700"
+                          >
+                            Settings
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           )}
 
           {activeTab === 'Products' && (

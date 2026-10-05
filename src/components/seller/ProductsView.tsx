@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { SellerProduct, ProductVariant } from '../../types/seller';
 import { toast } from 'react-toastify';
 import {
@@ -6,7 +6,6 @@ import {
   updateProductApi,
   fetchProductVariantsApi,
   createProductVariantApi,
-  updateProductVariantApi,
   deleteProductVariantApi,
   updateVariantInventoryApi,
 } from '../../redux/services/sellerService';
@@ -149,14 +148,10 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       };
 
       const result = await updateProductApi(editingProduct.id, updatedData);
-      const merged: SellerProduct = {
-        ...editingProduct,
-        ...updatedData,
-        id: editingProduct.id,
-      };
+      if (!result) throw new Error('Product update was not confirmed by the server.');
 
       if (onEditProduct) {
-        onEditProduct(result || merged);
+        onEditProduct(result);
       }
       toast.success(`Product "${editName}" updated successfully!`);
       setEditingProduct(null);
@@ -268,12 +263,9 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           stockRemaining: newStock,
           status: newStock === 0 ? 'Out of Stock' : newStock < 10 ? 'Low Stock' : 'Available',
         });
+        if (!updated) throw new Error('Stock update was not confirmed by the server.');
         if (onEditProduct) {
-          onEditProduct(updated || {
-            ...prod,
-            stockRemaining: newStock,
-            status: newStock === 0 ? 'Out of Stock' : newStock < 10 ? 'Low Stock' : 'Available',
-          });
+          onEditProduct(updated);
         }
       }
       toast.success('Stock inventory updated successfully!');

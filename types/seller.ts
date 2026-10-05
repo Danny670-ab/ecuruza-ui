@@ -7,6 +7,8 @@ export interface SellerProfile {
   phone?: string;
   storeName?: string;
   storeDescription?: string;
+  storeLogo?: string;
+  storeBanner?: string;
   businessName?: string;
   businessAddress?: string;
   businessType?: string;
@@ -32,6 +34,7 @@ export interface SellerProduct {
   price: number;
   image: string;
   category?: string;
+  categoryId?: string;
   description?: string;
   status: 'Available' | 'Low Stock' | 'Out of Stock' | string;
   stockRemaining: number;
