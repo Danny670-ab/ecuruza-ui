@@ -24,7 +24,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
 
   // Keep in sync when parent re-fetches data
   useEffect(() => {
-    if (propReviews && propReviews.length > 0) {
+    if (propReviews) {
       setReviewList(propReviews);
     }
   }, [propReviews]);
@@ -62,7 +62,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
     );
     setReplyTextMap((prev) => ({ ...prev, [reviewId]: '' }));
     setActiveReplyId(null);
-    toast.success('Your response has been published to the buyer!');
+    toast.success('Reply posted.');
   };
 
   const handleDeleteReview = async (reviewId: string) => {
@@ -75,7 +75,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
         await deleteShopReviewApi(reviewId, shopId);
       }
       setReviewList((prev) => prev.filter((r) => r.id !== reviewId));
-      toast.success('Review removed successfully');
+      toast.success('Review deleted.');
     } catch {
       toast.error('Failed to remove review');
     } finally {

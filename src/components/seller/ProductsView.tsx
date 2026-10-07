@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { SellerProduct, ProductVariant } from '../../types/seller';
 import { toast } from 'react-toastify';
 import {
@@ -6,18 +6,22 @@ import {
   updateProductApi,
   fetchProductVariantsApi,
   createProductVariantApi,
+  updateProductVariantApi,
   deleteProductVariantApi,
   updateVariantInventoryApi,
+  fetchVariantInventoryApi,
 } from '../../redux/services/sellerService';
 
 interface ProductsViewProps {
   products: SellerProduct[];
-  onAddProduct: (product: Omit<SellerProduct, 'id'>) => void;
+  onAddProduct: (product: Omit<SellerProduct, 'id'> & { imageFile?: File | null }) => void;
   onDeleteProduct: (id: string) => void;
   onEditProduct?: (product: SellerProduct) => void;
   categoriesList?: Array<{ id: string; name: string }>;
   shopId?: string;
 }
+
+type NewProductData = Omit<SellerProduct, 'id'> & { imageFile?: File | null };
 
 export const ProductsView: React.FC<ProductsViewProps> = ({
   products,
@@ -43,8 +47,10 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   // Variant & Inventory management modal
   const [variantProduct, setVariantProduct] = useState<SellerProduct | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [variantDetails, setVariantDetails] = useState<Record<string, { sku: string; price: string }>>({});
   const [isLoadingVariants, setIsLoadingVariants] = useState(false);
   const [isAddingVariant, setIsAddingVariant] = useState(false);
+  const [savingVariantId, setSavingVariantId] = useState<string | null>(null);
   const [newVariantName, setNewVariantName] = useState('');
   const [newVariantSku, setNewVariantSku] = useState('');
   const [newVariantPrice, setNewVariantPrice] = useState('');
@@ -56,10 +62,10 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
   // New product form state
   const [newProductName, setNewProductName] = useState('');
-  const [newProductCategory, setNewProductCategory] = useState('Electronics');
+  const [newProductCategoryId, setNewProductCategoryId] = useState('');
   const [newProductPrice, setNewProductPrice] = useState('');
   const [newProductStock, setNewProductStock] = useState('');
-  const [newProductImage, setNewProductImage] = useState('');
+  const [newProductImage, setNewProductImage] = useState<File | null>(null);
   const [newProductDesc, setNewProductDesc] = useState('');
 
   // Edit product form state
@@ -85,6 +91,12 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     }
     return ['All', ...Array.from(set)];
   }, [products, categoriesList]);
+
+  useEffect(() => {
+    if (categoriesList?.length && !categoriesList.some((category) => category.id === newProductCategoryId)) {
+      setNewProductCategoryId(categoriesList[0].id);
+    }
+  }, [categoriesList, newProductCategoryId]);
 
   // Filtered products
   const filteredProducts = useMemo(() => {
@@ -139,6 +151,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       const updatedData: Partial<SellerProduct> = {
         name: editName.trim(),
         category: editCategory,
+        categoryId: categoriesList?.find((category) => category.name === editCategory)?.id,
         price: priceNum,
         stockRemaining: stockNum,
         status: stockNum === 0 ? 'Out of Stock' : stockNum < 10 ? 'Low Stock' : 'Available',
@@ -153,7 +166,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       if (onEditProduct) {
         onEditProduct(result);
       }
-      toast.success(`Product "${editName}" updated successfully!`);
+      toast.success('Product updated.');
       setEditingProduct(null);
     } catch {
       toast.error('Failed to update product');
@@ -185,7 +198,19 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     setIsAddingVariant(false);
     try {
       const list = await fetchProductVariantsApi(product.id);
-      setVariants(list);
+      const variantsWithInventory = await Promise.all(
+        list.map(async (variant) => ({
+          ...variant,
+          stock: (await fetchVariantInventoryApi(variant.id)) ?? variant.stock,
+        }))
+      );
+      setVariants(variantsWithInventory);
+      setVariantDetails(Object.fromEntries(
+        variantsWithInventory.map((variant) => [
+          variant.id,
+          { sku: variant.sku || '', price: String(variant.price) },
+        ])
+      ));
     } catch {
       setVariants([]);
     } finally {
@@ -212,7 +237,11 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         stock: stockNum,
       });
       setVariants((prev) => [...prev, created]);
-      toast.success(`Variant "${newVariantName}" added successfully!`);
+      setVariantDetails((prev) => ({
+        ...prev,
+        [created.id]: { sku: created.sku || '', price: String(created.price) },
+      }));
+      toast.success('Variant added.');
       setNewVariantName('');
       setNewVariantSku('');
       setNewVariantPrice('');
@@ -223,12 +252,45 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     }
   };
 
+  const handleSaveVariant = async (variant: ProductVariant) => {
+    const details = variantDetails[variant.id] || { sku: variant.sku || '', price: String(variant.price) };
+    const price = Number(details.price);
+    if (!Number.isFinite(price) || price < 0) {
+      toast.warning('Enter a valid variant price.');
+      return;
+    }
+
+    setSavingVariantId(variant.id);
+    try {
+      await updateProductVariantApi(variant.id, {
+        sku: details.sku.trim(),
+        price,
+      });
+      setVariants((prev) => prev.map((item) =>
+        item.id === variant.id
+          ? { ...item, sku: details.sku.trim(), price }
+          : item
+      ));
+      toast.success('Variant details updated.');
+    } catch {
+      toast.error('Variant update failed.');
+    } finally {
+      setSavingVariantId(null);
+    }
+  };
+
   // Delete Variant (DELETE /api/v1/products/variants/{variantId})
   const handleDeleteVariant = async (variantId: string) => {
     if (!window.confirm('Delete this product variant?')) return;
     try {
-      await deleteProductVariantApi(variantId);
+      const deleted = await deleteProductVariantApi(variantId);
+      if (!deleted) throw new Error('The variant could not be deleted from the server.');
       setVariants((prev) => prev.filter((v) => v.id !== variantId));
+      setVariantDetails((prev) => {
+        const next = { ...prev };
+        delete next[variantId];
+        return next;
+      });
       toast.success('Variant removed');
     } catch {
       toast.error('Failed to delete variant');
@@ -244,7 +306,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       );
       toast.success('Variant inventory updated');
     } catch {
-      toast.error('Failed to update variant inventory');
+      toast.error('Inventory update failed.');
     }
   };
 
@@ -268,7 +330,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           onEditProduct(updated);
         }
       }
-      toast.success('Stock inventory updated successfully!');
+      toast.success('Stock updated.');
     } catch {
       toast.error('Failed to update stock');
     } finally {
@@ -287,34 +349,38 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       toast.warning('Please enter a valid price in Rwf');
       return;
     }
-    const stockNum = parseInt(newProductStock, 10);
-    if (isNaN(stockNum) || stockNum < 0) {
-      toast.warning('Please enter a valid stock quantity');
+    const stockNum = Number(newProductStock);
+    if (!Number.isInteger(stockNum) || stockNum < 0) {
+      toast.warning('Enter a whole stock quantity.');
+      return;
+    }
+    const selectedCategory = categoriesList?.find((category) => category.id === newProductCategoryId);
+    if (!selectedCategory) {
+      toast.warning('Categories unavailable.');
       return;
     }
 
-    const defaultImg =
-      newProductImage.trim() ||
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120&auto=format&fit=crop&q=80';
-
-    onAddProduct({
+    const newProduct: NewProductData = {
       name: newProductName.trim(),
-      category: newProductCategory,
+      category: selectedCategory.name,
+      categoryId: selectedCategory.id,
       price: priceNum,
       stockRemaining: stockNum,
       status: stockNum === 0 ? 'Out of Stock' : stockNum < 10 ? 'Low Stock' : 'Available',
-      image: defaultImg,
+      image: '',
       description: newProductDesc.trim(),
       salesCount: 0,
       rating: 5.0,
       shopId,
-    });
+      imageFile: newProductImage,
+    };
+    onAddProduct(newProduct);
 
     setIsAddModalOpen(false);
     setNewProductName('');
     setNewProductPrice('');
     setNewProductStock('');
-    setNewProductImage('');
+    setNewProductImage(null);
     setNewProductDesc('');
   };
 
@@ -675,12 +741,13 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Category *</label>
                   <select
-                    value={newProductCategory}
-                    onChange={(e) => setNewProductCategory(e.target.value)}
+                    required
+                    value={newProductCategoryId}
+                    onChange={(e) => setNewProductCategoryId(e.target.value)}
                     className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
                   >
-                    {categories.filter((c) => c !== 'All').map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
+                    {categoriesList?.map((category) => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
                     ))}
                   </select>
                 </div>
@@ -699,30 +766,28 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Initial Stock Remaining *</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    value={newProductStock}
-                    onChange={(e) => setNewProductStock(e.target.value)}
-                    placeholder="e.g. 50"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Initial Stock *</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="1"
+                  value={newProductStock}
+                  onChange={(e) => setNewProductStock(e.target.value)}
+                  placeholder="e.g. 50"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Image URL (Optional)</label>
-                  <input
-                    type="url"
-                    value={newProductImage}
-                    onChange={(e) => setNewProductImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Product Image</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={(e) => setNewProductImage(e.target.files?.[0] || null)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
+                />
               </div>
 
               <div>
@@ -1078,9 +1143,34 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                       {variants.map((v) => (
                         <tr key={v.id} className="hover:bg-gray-50/60">
                           <td className="py-2.5 px-3 font-semibold text-gray-900">{v.name}</td>
-                          <td className="py-2.5 px-3 text-gray-500 font-mono text-[11px]">{v.sku || '—'}</td>
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="text"
+                              value={variantDetails[v.id]?.sku ?? v.sku ?? ''}
+                              onChange={(e) => setVariantDetails((prev) => ({
+                                ...prev,
+                                [v.id]: {
+                                  sku: e.target.value,
+                                  price: prev[v.id]?.price ?? String(v.price),
+                                },
+                              }))}
+                              className="w-28 rounded border border-gray-300 px-1.5 py-0.5 font-mono text-[11px] text-gray-900"
+                            />
+                          </td>
                           <td className="py-2.5 px-3 font-bold text-gray-800">
-                            Rwf {typeof v.price === 'number' ? v.price.toLocaleString() : v.price}
+                            <input
+                              type="number"
+                              min="0"
+                              value={variantDetails[v.id]?.price ?? String(v.price)}
+                              onChange={(e) => setVariantDetails((prev) => ({
+                                ...prev,
+                                [v.id]: {
+                                  sku: prev[v.id]?.sku ?? v.sku ?? '',
+                                  price: e.target.value,
+                                },
+                              }))}
+                              className="w-24 rounded border border-gray-300 px-1.5 py-0.5 text-xs text-gray-900"
+                            />
                           </td>
                           <td className="py-2.5 px-3">
                             <div className="flex items-center gap-1.5">
@@ -1100,6 +1190,13 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                             </div>
                           </td>
                           <td className="py-2.5 px-3 text-right">
+                            <button
+                              onClick={() => handleSaveVariant(v)}
+                              disabled={savingVariantId === v.id}
+                              className="mr-2 text-emerald-700 hover:text-emerald-800 font-semibold text-xs disabled:opacity-50"
+                            >
+                              {savingVariantId === v.id ? 'Saving...' : 'Save'}
+                            </button>
                             <button
                               onClick={() => handleDeleteVariant(v.id)}
                               className="text-red-600 hover:text-red-700 font-semibold text-xs"

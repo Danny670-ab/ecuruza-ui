@@ -14,6 +14,7 @@ import type {
 } from '../../types/seller';
 import {
   fetchCurrentSellerProfile,
+  fetchCategoriesApi,
   fetchProducts,
   createProductApi,
   deleteProductApi,
@@ -23,10 +24,11 @@ import {
   fetchMySellerApplicationApi,
   deriveCustomersFromOrders,
   deriveShipmentsFromOrders,
+  getSellerApiErrorMessage,
   fetchUserNotificationsApi,
   markNotificationAsReadApi,
   markAllNotificationsAsReadApi,
-  fetchMyShopApi,
+  deleteShopApi,
   createShopApi,
 } from '../redux/services/sellerService';
 import { setAuthToken } from '../redux/axiosConfig';
@@ -111,6 +113,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
   const [salesHistory, setSalesHistory] = useState<SalesDataPoint[]>([]);
   const [products, setProducts] = useState<SellerProduct[]>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [customers, setCustomers] = useState<SellerCustomer[]>([]);
   const [shipments, setShipments] = useState<SellerShipment[]>([]);
@@ -125,39 +128,59 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
     setIsLoading(true);
     try {
       // 1. Fetch seller profile + dashboard analytics + shop + shop stats
-      const [{ profile, dashboardData, shop, shopStats }, myShop] = await Promise.all([
-        fetchCurrentSellerProfile(),
-        fetchMyShopApi(),
-      ]);
-      const profileShops = Array.isArray((profile as any)?.shops) ? (profile as any).shops : [];
-      const currentShop = myShop || profileShops[0] || shop;
+      const { profile, dashboardData, shop, shopStats, shops: profileShops } =
+        await fetchCurrentSellerProfile();
+      const currentShop = shop || profileShops[0];
 
       const normalizedShops = Array.from(
         new Map(
           [currentShop, ...profileShops]
-            .filter(Boolean)
-            .map((shopItem: any) => [String(shopItem.id || shopItem.slug || shopItem.name), shopItem])
+            .filter((shopItem: any) => Boolean(shopItem?.id))
+            .map((shopItem: any) => [
+              String(shopItem.id),
+              {
+                ...shopItem,
+                id: String(shopItem.id),
+                name: shopItem.name || shopItem.businessName || 'My Shop',
+              },
+            ])
         ).values()
       ) as Array<{ id: string; name: string; slug?: string; status?: string }>;
+      const preferredShop =
+        normalizedShops.find((s) => s.id === selectedShopId) ||
+        normalizedShops.find((s) => s.id === (currentShop as any)?.id) ||
+        normalizedShops.find((s) => s.id === profile?.shopId) ||
+        normalizedShops[0];
+      const resolvedShopId =
+        preferredShop?.id ||
+        profile?.shopId ||
+        (shop as any)?.id;
 
       if (normalizedShops.length > 0) {
         setShops(normalizedShops);
-        const preferredShop = normalizedShops.find((s) => s.id === (profile?.shopId || (shop as any)?.id || selectedShopId)) || normalizedShops[0];
         if (preferredShop?.id) {
           const logoValue = (preferredShop as any).logo;
           const bannerValue = (preferredShop as any).banner;
           setSelectedShopId(preferredShop.id);
           setSellerProfile((prev) => ({
             ...prev,
-            shopId: preferredShop.id,
+            shopId: resolvedShopId || preferredShop.id,
             storeName: preferredShop.name || prev.storeName,
             storeLogo: typeof logoValue === 'string' ? logoValue : logoValue?.url || prev.storeLogo,
             storeBanner: typeof bannerValue === 'string' ? bannerValue : bannerValue?.url || prev.storeBanner,
+            storeReturnPolicy: (preferredShop as any).returnPolicy || prev.storeReturnPolicy,
+            storeShippingPolicy: (preferredShop as any).shippingPolicy || prev.storeShippingPolicy,
+            storeFacebookUrl: (preferredShop as any).facebookUrl || prev.storeFacebookUrl,
+            storeTwitterUrl: (preferredShop as any).twitterUrl || prev.storeTwitterUrl,
+            storeInstagramUrl: (preferredShop as any).instagramUrl || prev.storeInstagramUrl,
+            storeLinkedinUrl: (preferredShop as any).linkedinUrl || prev.storeLinkedinUrl,
+            storeYoutubeUrl: (preferredShop as any).youtubeUrl || prev.storeYoutubeUrl,
+            storeTiktokUrl: (preferredShop as any).tiktokUrl || prev.storeTiktokUrl,
           }));
         }
       }
 
-      const shopId = selectedShopId || profile?.shopId || (shop as any)?.id || (myShop as any)?.id || normalizedShops[0]?.id;
+      const shopId = resolvedShopId;
 
       // Update seller profile
       if (profile && (profile.name || profile.email)) {
@@ -169,6 +192,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             email: profile.email || prev.email,
             avatar: profile.avatar || prev.avatar,
             storeName: profile.storeName || prev.storeName,
+            shopId: resolvedShopId || prev.shopId,
           };
           return updated;
         });
@@ -180,6 +204,16 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       const totalRevenue = overview?.totalRevenue ?? stats?.totalRevenue ?? 0;
       const totalOrders = overview?.totalOrders ?? stats?.totalOrders ?? 0;
       const avgRating = overview?.averageRating ?? stats?.averageRating ?? stats?.rating ?? 0;
+      const shopViews = stats?.views ?? stats?.totalViews ?? stats?.viewCount ?? stats?.viewsCount;
+      const reviewsCount = stats?.reviewsCount ?? stats?.totalReviews ?? stats?.reviewCount;
+      const productsAndViews = [
+        overview?.totalProducts ? `${overview.totalProducts} products` : null,
+        shopViews !== undefined ? `${Number(shopViews).toLocaleString()} views` : null,
+      ].filter(Boolean).join(' · ');
+      const ratingAndReviews = [
+        avgRating ? `${avgRating} ★ rating` : null,
+        reviewsCount !== undefined ? `${Number(reviewsCount).toLocaleString()} reviews` : null,
+      ].filter(Boolean).join(' · ');
 
       setMetrics([
         {
@@ -189,7 +223,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             totalOrders && totalRevenue
               ? `${Math.round(totalRevenue / totalOrders).toLocaleString()} Rwf`
               : totalRevenue ? `${totalRevenue.toLocaleString()} Rwf` : '0 Rwf',
-          change: overview?.totalProducts ? `${overview.totalProducts} products` : '+0%',
+          change: productsAndViews || '+0%',
           changeType: 'positive',
           bgColor: 'bg-[#0e5c2d]',
         },
@@ -207,7 +241,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           id: 'lifetime-value',
           title: 'Lifetime Value',
           value: totalRevenue ? `${totalRevenue.toLocaleString()} Rwf` : '0 Rwf',
-          change: avgRating ? `${avgRating} ★ rating` : stats?.reviewsCount ? `${stats.reviewsCount} reviews` : '+0%',
+          change: ratingAndReviews || '+0%',
           changeType: 'positive',
           bgColor: 'bg-[#156633]',
         },
@@ -235,33 +269,29 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       }
 
       // 4. Fetch products for this shop
-      const apiProducts = shopId ? await fetchProducts(shopId) : [];
-      if (apiProducts.length > 0) {
+      setCategories(await fetchCategoriesApi());
+      try {
+        const apiProducts = shopId ? await fetchProducts(shopId) : [];
         setProducts(apiProducts);
-      } else {
+      } catch (error) {
         setProducts([]);
+        toast.error(getSellerApiErrorMessage(error, 'Could not load products for this shop.'));
       }
 
       // 5. Fetch orders from real database
       const apiOrders = shopId ? await fetchSellerOrdersApi(shopId) : [];
-      if (apiOrders.length > 0) {
-        setOrders(apiOrders);
-      }
+      setOrders(apiOrders);
 
       // Also include recent orders from dashboard data
       const recentOrders = dashboardData?.recentOrders;
 
       // 6. Derive customers from orders
       const derivedCustomers = deriveCustomersFromOrders(apiOrders, recentOrders);
-      if (derivedCustomers.length > 0) {
-        setCustomers(derivedCustomers);
-      }
+      setCustomers(derivedCustomers);
 
       // 7. Derive shipments from orders
       const derivedShipments = deriveShipmentsFromOrders(apiOrders);
-      if (derivedShipments.length > 0) {
-        setShipments(derivedShipments);
-      }
+      setShipments(derivedShipments);
 
       // 8. Fetch shop reviews
       const apiReviews = shopId ? await fetchShopReviewsApi(shopId) : [];
@@ -315,17 +345,20 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedShopId]);
 
   useEffect(() => {
     loadRealData();
   }, [loadRealData]);
 
   // Product Actions
-  const handleAddProduct = async (newProdData: Omit<SellerProduct, 'id'>) => {
+  const handleAddProduct = async (
+    newProdData: Omit<SellerProduct, 'id'> & { imageFile?: File | null }
+  ) => {
+    const activeShopId = selectedShopId || sellerProfile.shopId;
     try {
-      if (!sellerProfile.shopId) {
-        toast.warning('Create or select a shop before adding a product.');
+      if (!activeShopId) {
+        toast.warning('Select a shop first.');
         return;
       }
 
@@ -333,14 +366,15 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         name: newProdData.name,
         price: newProdData.price,
         description: newProdData.description,
+        categoryId: newProdData.categoryId,
         stock: newProdData.stockRemaining,
-        category: newProdData.category,
-        shopId: sellerProfile.shopId,
+        shopId: activeShopId,
+        imageFile: newProdData.imageFile,
       });
       setProducts((prev) => [created, ...prev]);
-      toast.success('Product added successfully!');
+      toast.success('Product added.');
     } catch (err: any) {
-      const message = err?.message || 'Failed to add product.';
+      const message = getSellerApiErrorMessage(err, 'Product creation failed.');
       toast.error(message);
     }
   };
@@ -354,11 +388,11 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const handleDeleteProduct = async (productId: string) => {
     const deleted = await deleteProductApi(productId);
     if (!deleted) {
-      toast.error('Could not delete product from the server.');
+      toast.error('Product deletion failed.');
       return;
     }
     setProducts((prev) => prev.filter((p) => p.id !== productId));
-    toast.success('Product removed successfully.');
+    toast.success('Product deleted.');
   };
 
   // Notifications Actions
@@ -372,7 +406,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const handleMarkAllAsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     await markAllNotificationsAsReadApi();
-    toast.success('All notifications marked as read');
+    toast.success('All marked as read.');
   };
 
   const handleUpdateProfile = (updated: Partial<SellerProfile>) => {
@@ -397,7 +431,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
-      toast.warning('Please enter an order ID, customer, or product name.');
+      toast.warning('Enter a search term.');
       return;
     }
     const q = searchQuery.toLowerCase();
@@ -413,7 +447,6 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
     } else {
       setActiveTab('Products');
     }
-    toast.info(`Searching for "${searchQuery}" in ${activeTab}`);
   };
 
   const handleShopSelect = (shopId: string) => {
@@ -428,9 +461,32 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
     setActiveTab('Overview');
   };
 
+  const handleDeleteShop = async (shopId: string) => {
+    if (!window.confirm('Delete this shop? This action cannot be undone.')) return;
+
+    const deleted = await deleteShopApi(shopId);
+    if (!deleted) {
+      toast.error('Shop deletion failed.');
+      return;
+    }
+
+    const remainingShops = shops.filter((shop) => shop.id !== shopId);
+    setShops(remainingShops);
+    if (selectedShopId === shopId) {
+      const nextShop = remainingShops[0];
+      setSelectedShopId(nextShop?.id);
+      setSellerProfile((prev) => ({
+        ...prev,
+        shopId: nextShop?.id,
+        storeName: nextShop?.name || 'My Store',
+      }));
+    }
+    toast.success('Shop deleted.');
+  };
+
   const handleCreateShop = async () => {
     if (sellerProfile.shopId || shops.length > 0) {
-      toast.info('Your account already has a shop. Edit its details in Store Settings.');
+      toast.info('Shop already exists.');
       setActiveTab('Store Setting');
       return;
     }
@@ -441,7 +497,10 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         name: nextName,
       });
       const createdShop = (created as any)?.shop || created;
-      const newId = createdShop?.id || `shop-${Date.now()}`;
+      if (!createdShop?.id) {
+        throw new Error('The server did not return the new shop ID.');
+      }
+      const newId = createdShop.id;
       const nextShop = {
         id: String(newId),
         name: createdShop?.name || nextName,
@@ -455,27 +514,21 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         shopId: nextShop.id,
         storeName: nextShop.name,
       }));
-      toast.success('New shop created successfully.');
+      toast.success('Shop created.');
       setActiveTab('Shops');
     } catch (error: any) {
-      const message = error?.response?.data?.message;
+      const message = getSellerApiErrorMessage(error, 'Shop creation failed.');
       if (typeof message === 'string' && message.toLowerCase().includes('already have a shop')) {
-        toast.info('Your account already has a shop. Edit its details in Store Settings.');
+        toast.info('Shop already exists.');
         setActiveTab('Store Setting');
         return;
       }
-      toast.error(message || 'Unable to create a new shop right now.');
+      toast.error(message);
     }
   };
 
-  const handleUpgradePlan = () => {
-    toast.success('Seller Pro Features: Detailed Analytics & Multi-Store access enabled!');
-  };
-
   const handleLogout = () => {
-    // Clear all auth tokens
     setAuthToken(null);
-    // Clear cached seller data
     try {
       localStorage.removeItem('seller_profile');
       localStorage.removeItem('seller_products');
@@ -483,25 +536,11 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       localStorage.removeItem('user');
       sessionStorage.clear();
     } catch {
-      // ignore
     }
-    toast.success('You have been signed out. See you soon!');
-    // Redirect to home / login page after a brief delay
+    toast.success('Signed out.');
     setTimeout(() => {
       window.location.href = '/';
     }, 1000);
-  };
-
-  const handleExportOrders = () => {
-    toast.success('Exporting seller orders as CSV...');
-  };
-
-  const handleFilterOrders = () => {
-    toast.info('Orders filter drawer opened');
-  };
-
-  const handleCustomizeTable = () => {
-    toast.info('Table columns customization mode active');
   };
   const renderIcon = (iconName: string) => {
     switch (iconName) {
@@ -615,20 +654,6 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           </nav>
         </div>
 
-        {/* Upgrade Pro Card */}
-        <div className="mt-8 rounded-2xl bg-[#324035] p-4 text-white shadow-sm">
-          <h4 className="text-base font-bold">Upgrade Pro</h4>
-          <p className="mt-1 text-xs text-gray-200 leading-relaxed">
-            Discover New Features to Detailed Report And Analysis
-          </p>
-          <button
-            onClick={handleUpgradePlan}
-            className="mt-4 w-full rounded-xl bg-[#d5ddd6] py-2.5 text-center text-sm font-bold text-[#111827] transition-all hover:bg-white active:scale-98"
-          >
-            Upgrade Now
-          </button>
-        </div>
-
         {/* Logout Button */}
         <button
           id="seller-logout-btn"
@@ -673,13 +698,6 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                 placeholder="Search orders, products, customers..."
                 className="w-full bg-[#dbe0e5] text-sm text-gray-800 rounded-lg pl-9 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
               />
-              <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-600">
-                {/* Microphone Icon */}
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                </svg>
-              </span>
             </form>
           </div>
 
@@ -792,18 +810,6 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               <p className="text-[11px] text-gray-500">{sellerProfile.email}</p>
             </div>
 
-            {/* Header Logout Button */}
-            <button
-              id="seller-header-logout-btn"
-              onClick={handleLogout}
-              title="Sign out"
-              aria-label="Log out"
-              className="ml-1 p-2 rounded-xl text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors focus:outline-none"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
           </div>
         </header>
 
@@ -817,9 +823,6 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               topProducts={products}
               lastOrders={orders.length > 0 ? orders.slice(0, 5) : []}
               onNavigateToTab={(tab) => setActiveTab(tab)}
-              onExportOrders={handleExportOrders}
-              onFilterOrders={handleFilterOrders}
-              onCustomizeTable={handleCustomizeTable}
               isLoading={isLoading}
               onRefreshData={loadRealData}
             />
@@ -882,6 +885,12 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                           >
                             Settings
                           </button>
+                          <button
+                            onClick={() => handleDeleteShop(shop.id)}
+                            className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                     );
@@ -897,7 +906,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               onAddProduct={handleAddProduct}
               onDeleteProduct={handleDeleteProduct}
               onEditProduct={handleEditProduct}
-              shopId={sellerProfile.shopId}
+              categoriesList={categories}
+              shopId={selectedShopId || sellerProfile.shopId}
             />
           )}
 
@@ -908,7 +918,6 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           {activeTab === 'Order' && (
             <OrderView
               orders={orders}
-              onExport={handleExportOrders}
               onUpdateStatus={(orderId, st) => {
                 setOrders((prev) =>
                   prev.map((o) => (o.id === orderId ? { ...o, status: st } : o))
@@ -931,10 +940,11 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           {activeTab === 'Feedback' && (
             <FeedbackView
               reviews={reviews}
-              shopId={sellerProfile.shopId}
+              shopId={selectedShopId || sellerProfile.shopId}
               onDeleteReview={async (reviewId) => {
+                const deleted = await deleteShopReviewApi(reviewId, selectedShopId || sellerProfile.shopId);
+                if (!deleted) throw new Error('The review could not be deleted from the server.');
                 setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-                await deleteShopReviewApi(reviewId, sellerProfile.shopId);
               }}
             />
           )}

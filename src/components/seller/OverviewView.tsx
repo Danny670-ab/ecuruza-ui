@@ -14,9 +14,6 @@ interface OverviewViewProps {
   topProducts: SellerProduct[];
   lastOrders: SellerOrder[];
   onNavigateToTab: (tab: string) => void;
-  onExportOrders: () => void;
-  onFilterOrders: () => void;
-  onCustomizeTable: () => void;
   isLoading?: boolean;
   onRefreshData?: () => void;
 }
@@ -28,9 +25,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   topProducts,
   lastOrders,
   onNavigateToTab,
-  onExportOrders,
-  onFilterOrders,
-  onCustomizeTable,
   isLoading = false,
   onRefreshData,
 }) => {
@@ -111,16 +105,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 <span className="font-medium">Revenue</span>
               </div>
               <span className="text-gray-600 font-medium">Order</span>
-              {/* Filter Icon */}
-              <button
-                onClick={onFilterOrders}
-                className="text-gray-700 hover:text-black transition-colors"
-                title="Filter Sales Overtime"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
             </div>
           </div>
 
@@ -215,26 +199,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       <div className="bg-white rounded-xl border border-gray-300/80 p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-gray-200 gap-3">
           <h3 className="text-lg font-bold text-black">Last Orders</h3>
-          <div className="flex items-center gap-6 text-sm font-semibold text-black">
-            <button
-              onClick={onCustomizeTable}
-              className="hover:text-gray-600 transition-colors"
-            >
-              Customize
-            </button>
-            <button
-              onClick={onFilterOrders}
-              className="hover:text-gray-600 transition-colors"
-            >
-              Filter
-            </button>
-            <button
-              onClick={onExportOrders}
-              className="hover:text-gray-600 transition-colors"
-            >
-              Export
-            </button>
-          </div>
         </div>
 
         {/* Table Area */}

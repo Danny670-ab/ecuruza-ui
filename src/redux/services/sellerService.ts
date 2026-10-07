@@ -11,6 +11,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import axiosInstance from '../axiosConfig';
+import { isAxiosError } from 'axios';
 import type {
   SellerProfile,
   SellerProduct,
@@ -85,6 +86,27 @@ function getAuthToken(): string | null {
   }
 }
 
+interface ApiErrorResponse {
+  message?: string;
+  error?: {
+    code?: string;
+    details?: { code?: string };
+  };
+}
+
+export function getSellerApiErrorMessage(error: unknown, fallback: string): string {
+  const shorten = (message: string) => message.length > 72 ? `${message.slice(0, 69)}...` : message;
+  if (isAxiosError<ApiErrorResponse>(error)) {
+    const response = error.response?.data;
+    const databaseCode = response?.error?.details?.code;
+    if (databaseCode === 'P2022') {
+      return 'API database error (P2022).';
+    }
+    if (response?.message) return shorten(response.message);
+  }
+  return error instanceof Error && error.message ? shorten(error.message) : fallback;
+}
+
 // Remove legacy seller API snapshots; seller records must come from the API.
 try {
   ['seller_profile', 'seller_products', 'seller_orders'].forEach((key) => localStorage.removeItem(key));
@@ -100,33 +122,101 @@ try {
 //    GET /api/v1/shop/my-shop/stats
 // ─────────────────────────────────────────────────────────────────────────────
 
+interface SellerMeShop extends Record<string, unknown> {
+  id?: string;
+  name?: string;
+  logo?: string | { url?: string };
+  logoUrl?: string;
+  banner?: string | { url?: string };
+  bannerUrl?: string;
+  returnPolicy?: string;
+  shippingPolicy?: string;
+  facebookUrl?: string;
+  twitterUrl?: string;
+  instagramUrl?: string;
+  linkedinUrl?: string;
+  youtubeUrl?: string;
+  tiktokUrl?: string;
+}
+
+interface SellerMeResponse {
+  user?: {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    avatarUrl?: string;
+  };
+  seller?: {
+    id?: string;
+    businessName?: string;
+    businessType?: string;
+    businessAddress?: string;
+    verificationStatus?: string;
+    user?: SellerMeResponse['user'];
+  };
+  statistics?: {
+    totalShops?: number;
+    totalProducts?: number;
+    totalOrders?: number;
+    activeAds?: number;
+    activeSubscriptions?: number;
+  };
+  shops?: SellerMeShop[];
+}
+
 export async function fetchCurrentSellerProfile(): Promise<{
   profile: SellerProfile | null;
   dashboardData: SellerDashboardApiResponse | null;
   shop: Record<string, unknown> | null;
   shopStats: Record<string, unknown> | null;
+  shops: SellerMeShop[];
 }> {
   let profile: SellerProfile | null = null;
   let dashboardData: SellerDashboardApiResponse | null = null;
   let shop: Record<string, unknown> | null = null;
   let shopStats: Record<string, unknown> | null = null;
+  let shops: SellerMeShop[] = [];
 
   const token = getAuthToken();
-  if (!token) return { profile, dashboardData, shop, shopStats };
+  if (!token) return { profile, dashboardData, shop, shopStats, shops };
 
-  // GET /api/v1/sellers/me — response: { success, message, data: { user, seller, statistics, shops } }
-  try {
-    const res = await axiosInstance.get('/sellers/me');
-    const d = res.data?.data || res.data;
-    const user = d?.user || {};
-    const seller = d?.seller || {};
-    const shops = d?.shops || [];
-    const firstShop = shops[0] || {};
+  const responses = await Promise.allSettled([
+    axiosInstance.get('/sellers/me'),
+    axiosInstance.get('/shop/my-shop'),
+    axiosInstance.get('/shop/my-shop/stats'),
+  ]);
+  const resourceNames = ['seller profile', 'seller shop', 'shop statistics'];
+  const responseData = (index: number): unknown => {
+    const result = responses[index];
+    if (result.status === 'rejected') {
+      console.warn(`Could not load ${resourceNames[index]}:`, result.reason);
+      return null;
+    }
+    const body: unknown = result.value.data;
+    if (body && typeof body === 'object' && 'data' in body) {
+      return (body as { data?: unknown }).data || body;
+    }
+    return body;
+  };
 
+  const sellerData = responseData(0) as SellerMeResponse | null;
+  const shopResponse = responseData(1) as
+    | (Record<string, unknown> & { shop?: Record<string, unknown> })
+    | null;
+  const statsResponse = responseData(2) as
+    | (Record<string, unknown> & { stats?: Record<string, unknown> })
+    | null;
+  const seller = sellerData?.seller || {};
+  const user = sellerData?.user || seller.user || {};
+  shops = Array.isArray(sellerData?.shops) ? sellerData.shops : [];
+  const firstShop = shops[0] || {};
+
+  if (sellerData) {
     const firstName = user.firstName || '';
     const lastName = user.lastName || '';
     const fullName = [firstName, lastName].filter(Boolean).join(' ') || seller.businessName || 'Seller';
-
     profile = {
       id: seller.id,
       userId: user.id,
@@ -135,23 +225,43 @@ export async function fetchCurrentSellerProfile(): Promise<{
       phone: user.phone || '',
       avatar: user.avatarUrl || '',
       storeName: firstShop.name || seller.businessName || 'My Store',
-      storeLogo: typeof firstShop.logo === 'string' ? firstShop.logo : firstShop.logo?.url || '',
-      storeBanner: typeof firstShop.banner === 'string' ? firstShop.banner : firstShop.banner?.url || '',
+      storeLogo: typeof firstShop.logo === 'string'
+        ? firstShop.logo
+        : firstShop.logo?.url || firstShop.logoUrl || '',
+      storeBanner: typeof firstShop.banner === 'string'
+        ? firstShop.banner
+        : firstShop.banner?.url || firstShop.bannerUrl || '',
+      storeReturnPolicy: firstShop.returnPolicy || '',
+      storeShippingPolicy: firstShop.shippingPolicy || '',
+      storeFacebookUrl: firstShop.facebookUrl || '',
+      storeTwitterUrl: firstShop.twitterUrl || '',
+      storeInstagramUrl: firstShop.instagramUrl || '',
+      storeLinkedinUrl: firstShop.linkedinUrl || '',
+      storeYoutubeUrl: firstShop.youtubeUrl || '',
+      storeTiktokUrl: firstShop.tiktokUrl || '',
       businessName: seller.businessName,
       businessType: seller.businessType || 'INDIVIDUAL',
       businessAddress: seller.businessAddress || '',
-      isVerified: seller.verificationStatus === 'VERIFIED',
+      isVerified: seller.verificationStatus === 'VERIFIED' || seller.verificationStatus === 'APPROVED',
       verificationStatus: seller.verificationStatus,
       shopId: firstShop.id || undefined,
     };
+  }
 
-  } catch { /* silent — 401 or no seller yet */ }
-
-  // The live Swagger/backend currently does not reliably expose these seller dashboard/shop stats endpoints.
-  // Do not call them in the app until the backend confirms they exist; otherwise the dashboard produces noisy 404/500 errors.
-  // Keep the seller profile call above as the only confirmed seller endpoint in this flow.
-
-  return { profile, dashboardData, shop, shopStats };
+  const statistics = sellerData?.statistics;
+  if (statistics) {
+    dashboardData = {
+      overview: {
+        totalShops: statistics.totalShops,
+        totalProducts: statistics.totalProducts,
+        totalOrders: statistics.totalOrders,
+        activeAds: statistics.activeAds,
+      },
+    };
+  }
+  shop = shopResponse?.shop || shopResponse || null;
+  shopStats = statsResponse?.stats || statsResponse || null;
+  return { profile, dashboardData, shop, shopStats, shops };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,14 +275,22 @@ export interface ApiCategory {
   slug: string;
 }
 
+let categoriesRequest: Promise<ApiCategory[]> | null = null;
+
 export async function fetchCategoriesApi(): Promise<ApiCategory[]> {
+  if (!categoriesRequest) {
+    categoriesRequest = axiosInstance.get('/categories/all').then((res) => {
+      const d = res.data?.data || res.data;
+      const list = Array.isArray(d) ? d : d?.categories || [];
+      return list.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug || c.name }));
+    }).catch(() => []);
+  }
+
+  const request = categoriesRequest;
   try {
-    const res = await axiosInstance.get('/categories/all');
-    const d = res.data?.data || res.data;
-    const list = Array.isArray(d) ? d : d?.categories || [];
-    return list.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug || c.name }));
-  } catch {
-    return [];
+    return await request;
+  } finally {
+    if (categoriesRequest === request) categoriesRequest = null;
   }
 }
 
@@ -198,6 +316,8 @@ function mapRawProduct(p: any, idx = 0, shopId?: string): SellerProduct {
     stock = p.variants.reduce((s: number, v: any) => s + (Number(v.stock) || 0), 0);
   } else if (p.inventory && p.inventory.length > 0) {
     stock = p.inventory.reduce((s: number, inv: any) => s + (Number(inv.quantity) || 0), 0);
+  } else if (p.stock !== undefined || p.quantity !== undefined) {
+    stock = Number(p.stock ?? p.quantity) || 0;
   }
 
   const status = p.status === 'OUT_OF_STOCK' || stock === 0
@@ -224,17 +344,48 @@ function mapRawProduct(p: any, idx = 0, shopId?: string): SellerProduct {
   };
 }
 
+const productRequests = new Map<string, Promise<SellerProduct[]>>();
+
 export async function fetchProducts(shopId?: string): Promise<SellerProduct[]> {
   const token = getAuthToken();
   if (!token || !shopId) return [];
 
+  let request = productRequests.get(shopId);
+  if (!request) {
+    request = (async () => {
+      try {
+        const res = await axiosInstance.get(`/products/shop/${shopId}`, {
+          params: { page: 1, limit: 100 },
+        });
+        const data = res.data?.data || res.data;
+        const items = Array.isArray(data) ? data : data?.products || data?.items || [];
+        return items.map((product: any, index: number) => mapRawProduct(product, index, shopId));
+      } catch (shopError) {
+        console.warn('Could not load products by shop; trying the documented all-products endpoint.', shopError);
+        try {
+          const res = await axiosInstance.get('/products/all', {
+            params: { page: 1, limit: 100 },
+          });
+          const data = res.data?.data || res.data;
+          const items = Array.isArray(data) ? data : data?.products || data?.items || [];
+          return items
+            .filter((product: any) => String(product.shopId || product.shop?.id || '') === shopId)
+            .map((product: any, index: number) => mapRawProduct(product, index, shopId));
+        } catch (allProductsError) {
+          throw new Error(getSellerApiErrorMessage(
+            allProductsError,
+            'Could not load seller products from either documented endpoint.'
+          ));
+        }
+      }
+    })();
+    productRequests.set(shopId, request);
+  }
+
   try {
-    const res = await axiosInstance.get(`/products/shop/${shopId}`);
-    const d = res.data?.data || res.data;
-    const items = Array.isArray(d) ? d : d?.products || d?.items || [];
-    return items.map((product: any, index: number) => mapRawProduct(product, index, shopId));
-  } catch {
-    return [];
+    return await request;
+  } finally {
+    if (productRequests.get(shopId) === request) productRequests.delete(shopId);
   }
 }
 
@@ -252,7 +403,7 @@ export async function fetchProductByIdApi(id: string): Promise<SellerProduct | n
 
 /**
  * Create product — POST /api/v1/products
- * Required: shopId, categoryId, name, price (all in multipart/form-data)
+ * Required: shopId, categoryId, name, price and stock (multipart/form-data)
  */
 export async function createProductApi(productData: {
   name: string;
@@ -275,18 +426,27 @@ export async function createProductApi(productData: {
     throw new Error('Create or select a shop before adding a product');
   }
 
+  if (!productData.categoryId) {
+    throw new Error('Select a valid product category');
+  }
+
+  if (!Number.isInteger(productData.stock) || Number(productData.stock) < 0) {
+    throw new Error('Stock must be a non-negative integer');
+  }
+
   if (token) {
     try {
+      const payload = {
+        name: productData.name.trim(),
+        price: Number(productData.price),
+        description: productData.description?.trim() || '',
+        shopId: productData.shopId,
+        categoryId: productData.categoryId,
+        stock: Number(productData.stock),
+      };
+
       const form = new FormData();
-      form.append('name', productData.name.trim());
-      form.append('price', String(productData.price));
-      if (productData.description) form.append('description', productData.description.trim());
-      if (productData.shopId) form.append('shopId', productData.shopId);
-      if (productData.categoryId) form.append('categoryId', productData.categoryId);
-      if (productData.category && !productData.categoryId) form.append('category', productData.category);
-      if (productData.stock !== undefined && Number.isFinite(productData.stock) && productData.stock >= 0) {
-        form.append('stock', String(productData.stock));
-      }
+      Object.entries(payload).forEach(([key, value]) => form.append(key, String(value)));
       if (productData.imageFile) {
         form.append('images', productData.imageFile);
       }
@@ -300,8 +460,11 @@ export async function createProductApi(productData: {
         return mapRawProduct(product, 0, productData.shopId);
       }
     } catch (err: any) {
-      console.error('[createProductApi] error:', err?.response?.data || err.message);
-      throw err;
+      const responseData = err?.response?.data;
+      console.error('[createProductApi] error:', responseData
+        ? JSON.stringify(responseData)
+        : err.message);
+      throw new Error(getSellerApiErrorMessage(err, 'Could not create product.'));
     }
   }
 
@@ -324,6 +487,12 @@ export async function updateProductApi(
       if (productData.price !== undefined) form.append('price', String(productData.price));
       if (productData.description !== undefined) form.append('description', productData.description);
       if (productData.categoryId) form.append('categoryId', productData.categoryId);
+      if (productData.stockRemaining !== undefined) {
+        if (!Number.isInteger(productData.stockRemaining) || productData.stockRemaining < 0) {
+          throw new Error('Stock must be a non-negative integer');
+        }
+        form.append('stock', String(productData.stockRemaining));
+      }
       if (productData.imageFile) form.append('images', productData.imageFile);
 
       const res = await axiosInstance.put(`/products/${id}`, form, {
@@ -453,14 +622,14 @@ export async function updateVariantInventoryApi(
   return res.data?.data || res.data;
 }
 
-export async function fetchVariantInventoryApi(variantId: string): Promise<number> {
+export async function fetchVariantInventoryApi(variantId: string): Promise<number | null> {
   // GET /api/v1/products/variants/{variantId}/inventory
   try {
     const res = await axiosInstance.get(`/products/variants/${variantId}/inventory`);
     const d = res.data?.data || res.data;
-    return Number(d?.quantity) || 0;
+    return Number(typeof d === 'number' ? d : d?.quantity ?? d?.stock) || 0;
   } catch {
-    return 0;
+    return null;
   }
 }
 
@@ -611,20 +780,25 @@ export async function fetchShopRatingSummaryApi(shopId: string): Promise<Record<
 }
 
 export async function deleteShopReviewApi(reviewId: string, shopId?: string): Promise<boolean> {
-  // DELETE /api/v1/shop/{id}/reviews/{reviewId}
-  if (shopId) {
-    try {
-      await axiosInstance.delete(`/shop/${shopId}/reviews/${reviewId}`);
-      return true;
-    } catch { /* ignore */ }
-  }
-  // Fallback: DELETE /api/v1/shop-reviews/{id}
+  if (!shopId) return false;
   try {
-    await axiosInstance.delete(`/shop-reviews/${reviewId}`);
+    await axiosInstance.delete(`/shop/${shopId}/reviews/${reviewId}`);
     return true;
   } catch {
     return false;
   }
+}
+
+export async function createShopReviewApi(
+  shopId: string,
+  review: { rating: number; comment?: string }
+): Promise<SellerReview> {
+  if (!Number.isInteger(review.rating) || review.rating < 1 || review.rating > 5) {
+    throw new Error('Rating must be a whole number from 1 to 5.');
+  }
+  const res = await axiosInstance.post(`/shop/${shopId}/reviews`, review);
+  const data = res.data?.data || res.data;
+  return mapRawReview(data?.review || data, 0, shopId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -732,7 +906,14 @@ export async function createShopApi(shopData: {
   phone?: string;
   email?: string;
   address?: string;
-  slug?: string;
+  returnPolicy?: string;
+  shippingPolicy?: string;
+  facebookUrl?: string;
+  twitterUrl?: string;
+  instagramUrl?: string;
+  linkedinUrl?: string;
+  youtubeUrl?: string;
+  tiktokUrl?: string;
   logo?: string;
   banner?: string;
   logoFile?: File | null;
@@ -752,6 +933,16 @@ export async function createShopApi(shopData: {
   if (shopData.phone) form.append('phone', shopData.phone);
   if (shopData.email) form.append('email', shopData.email);
   if (shopData.address) form.append('address', shopData.address);
+  if (shopData.returnPolicy) form.append('returnPolicy', shopData.returnPolicy);
+  if (shopData.shippingPolicy) form.append('shippingPolicy', shopData.shippingPolicy);
+  if (shopData.facebookUrl) form.append('facebookUrl', shopData.facebookUrl);
+  if (shopData.twitterUrl) form.append('twitterUrl', shopData.twitterUrl);
+  if (shopData.instagramUrl) form.append('instagramUrl', shopData.instagramUrl);
+  if (shopData.linkedinUrl) form.append('linkedinUrl', shopData.linkedinUrl);
+  if (shopData.youtubeUrl) form.append('youtubeUrl', shopData.youtubeUrl);
+  if (shopData.tiktokUrl) form.append('tiktokUrl', shopData.tiktokUrl);
+  if (shopData.logo) form.append('logo', shopData.logo);
+  if (shopData.banner) form.append('banner', shopData.banner);
   if (shopData.logoFile) form.append('logo', shopData.logoFile);
   if (shopData.bannerFile) form.append('banner', shopData.bannerFile);
 
@@ -769,9 +960,14 @@ export async function updateShopApi(
     phone?: string;
     email?: string;
     address?: string;
-    slug?: string;
     returnPolicy?: string;
     shippingPolicy?: string;
+    facebookUrl?: string;
+    twitterUrl?: string;
+    instagramUrl?: string;
+    linkedinUrl?: string;
+    youtubeUrl?: string;
+    tiktokUrl?: string;
     logo?: string;
     banner?: string;
     logoFile?: File | null;
@@ -783,14 +979,21 @@ export async function updateShopApi(
   }
 
   const form = new FormData();
-  if (shopData.name) form.append('name', shopData.name);
-  if (shopData.description) form.append('description', shopData.description);
-  if (shopData.phone) form.append('phone', shopData.phone);
-  if (shopData.email) form.append('email', shopData.email);
-  if (shopData.address) form.append('address', shopData.address);
-  if (shopData.slug) form.append('slug', shopData.slug);
-  if (shopData.returnPolicy) form.append('returnPolicy', shopData.returnPolicy);
-  if (shopData.shippingPolicy) form.append('shippingPolicy', shopData.shippingPolicy);
+  if (shopData.name !== undefined) form.append('name', shopData.name);
+  if (shopData.description !== undefined) form.append('description', shopData.description);
+  if (shopData.phone !== undefined) form.append('phone', shopData.phone);
+  if (shopData.email !== undefined) form.append('email', shopData.email);
+  if (shopData.address !== undefined) form.append('address', shopData.address);
+  if (shopData.returnPolicy !== undefined) form.append('returnPolicy', shopData.returnPolicy);
+  if (shopData.shippingPolicy !== undefined) form.append('shippingPolicy', shopData.shippingPolicy);
+  if (shopData.facebookUrl !== undefined) form.append('facebookUrl', shopData.facebookUrl);
+  if (shopData.twitterUrl !== undefined) form.append('twitterUrl', shopData.twitterUrl);
+  if (shopData.instagramUrl !== undefined) form.append('instagramUrl', shopData.instagramUrl);
+  if (shopData.linkedinUrl !== undefined) form.append('linkedinUrl', shopData.linkedinUrl);
+  if (shopData.youtubeUrl !== undefined) form.append('youtubeUrl', shopData.youtubeUrl);
+  if (shopData.tiktokUrl !== undefined) form.append('tiktokUrl', shopData.tiktokUrl);
+  if (shopData.logo !== undefined) form.append('logo', shopData.logo);
+  if (shopData.banner !== undefined) form.append('banner', shopData.banner);
   if (shopData.logoFile) form.append('logo', shopData.logoFile);
   if (shopData.bannerFile) form.append('banner', shopData.bannerFile);
 
@@ -831,6 +1034,24 @@ export async function fetchShopByIdApi(shopId: string): Promise<Record<string, u
   }
 }
 
+export async function fetchShopBySlugApi(slug: string): Promise<Record<string, unknown> | null> {
+  try {
+    const res = await axiosInstance.get(`/shop/slug/${encodeURIComponent(slug)}`);
+    return res.data?.data?.shop || res.data?.data || res.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteShopApi(shopId: string): Promise<boolean> {
+  try {
+    await axiosInstance.delete(`/shop/${shopId}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchAllShopsApi(): Promise<unknown[]> {
   try {
     const res = await axiosInstance.get('/shop/all');
@@ -862,6 +1083,8 @@ export async function submitSellerOnboardingApi(data: {
   country: string;
   city: string;
   businessAddress: string;
+  businessPhone?: string;
+  registrationNumber?: string;
   taxId?: string;
   idCardFile?: File | null;
 }): Promise<unknown> {
@@ -871,6 +1094,8 @@ export async function submitSellerOnboardingApi(data: {
   form.append('country', data.country);
   form.append('city', data.city);
   form.append('businessAddress', data.businessAddress);
+  if (data.businessPhone) form.append('businessPhone', data.businessPhone);
+  if (data.registrationNumber) form.append('registrationNumber', data.registrationNumber);
   if (data.taxId) form.append('taxId', data.taxId);
   if (data.idCardFile) form.append('idCard', data.idCardFile);
 
@@ -891,6 +1116,33 @@ export async function fetchSellerApplicationStatusApi(): Promise<unknown> {
   }
 }
 export const fetchMySellerApplicationApi = fetchSellerApplicationStatusApi;
+
+export async function fetchSellerApplicationsAdminApi(params?: {
+  page?: number;
+  limit?: number;
+  status?: 'PENDING' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
+}): Promise<unknown[]> {
+  const res = await axiosInstance.get('/sellers/applications', { params });
+  const data = res.data?.data || res.data;
+  return Array.isArray(data) ? data : data?.applications || [];
+}
+
+export async function fetchSellerApplicationAdminApi(id: string): Promise<unknown | null> {
+  try {
+    const res = await axiosInstance.get(`/sellers/applications/${id}`);
+    return res.data?.data || res.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function reviewSellerApplicationAdminApi(
+  id: string,
+  data: { status: 'APPROVED' | 'REJECTED'; adminMessage?: string }
+): Promise<unknown> {
+  const res = await axiosInstance.post(`/sellers/applications/${id}/review`, data);
+  return res.data?.data || res.data;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 11. SELLER PROFILE UPDATES
@@ -934,10 +1186,10 @@ export async function updateSellerProfileOnlyApi(payload: {
   avatarFile?: File | null;
 }): Promise<unknown> {
   const form = new FormData();
-  if (payload.firstName) form.append('firstName', payload.firstName);
-  if (payload.lastName) form.append('lastName', payload.lastName);
-  if (payload.phone) form.append('phone', payload.phone);
-  if (payload.bio) form.append('bio', payload.bio);
+  if (payload.firstName !== undefined) form.append('firstName', payload.firstName);
+  if (payload.lastName !== undefined) form.append('lastName', payload.lastName);
+  if (payload.phone !== undefined) form.append('phone', payload.phone);
+  if (payload.bio !== undefined) form.append('bio', payload.bio);
   if (payload.avatarFile) form.append('avatar', payload.avatarFile);
 
   const res = await axiosInstance.put('/sellers/profile', form, {
@@ -962,41 +1214,39 @@ export async function updateSellerBusinessApi(payload: {
 /** Convenience wrapper — updates profile + business in one call */
 export async function updateSellerProfileApi(payload: {
   name?: string;
-  email?: string;
   phone?: string;
   bio?: string;
   businessName?: string;
   businessAddress?: string;
   businessType?: 'INDIVIDUAL' | 'COMPANY';
 }): Promise<boolean> {
-  const token = getAuthToken();
-  if (!token) return false;
+  if (!getAuthToken()) throw new Error('Not authenticated — cannot update seller profile');
 
-  // Split name into firstName + lastName
-  const [firstName, ...rest] = (payload.name || '').split(' ');
-  const lastName = rest.join(' ');
+  const profilePayload: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    bio?: string;
+  } = {};
+  if (payload.name !== undefined) {
+    const [firstName = '', ...rest] = payload.name.trim().split(/\s+/);
+    profilePayload.firstName = firstName;
+    profilePayload.lastName = rest.join(' ');
+  }
+  if (payload.phone !== undefined) profilePayload.phone = payload.phone;
+  if (payload.bio !== undefined) profilePayload.bio = payload.bio;
+  if (Object.keys(profilePayload).length > 0) {
+    await updateSellerProfileOnlyApi(profilePayload);
+  }
 
-  try {
-    const form = new FormData();
-    if (firstName) form.append('firstName', firstName);
-    if (lastName) form.append('lastName', lastName);
-    if (payload.phone) form.append('phone', payload.phone);
-    if (payload.bio) form.append('bio', payload.bio);
-    await axiosInstance.put('/sellers/profile', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  } catch { /* ignore */ }
-
-  try {
-    if (payload.businessName || payload.businessAddress || payload.businessType) {
-      await axiosInstance.put('/sellers/business', {
-        businessName: payload.businessName,
-        businessAddress: payload.businessAddress,
-        businessType: payload.businessType,
-      });
-    }
-  } catch { /* ignore */ }
-
+  const businessPayload = {
+    businessName: payload.businessName,
+    businessAddress: payload.businessAddress,
+    businessType: payload.businessType,
+  };
+  if (Object.values(businessPayload).some((value) => value !== undefined)) {
+    await updateSellerBusinessApi(businessPayload);
+  }
   return true;
 }
 

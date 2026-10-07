@@ -7,6 +7,7 @@ import {
   updateSellerBusinessApi,
   submitSellerOnboardingApi,
   fetchMySellerApplicationApi,
+  getSellerApiErrorMessage,
   changePasswordApi,
   verifyEmailApi,
   resendVerificationApi,
@@ -28,6 +29,8 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
   const [applicationData, setApplicationData] = useState<any>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [logoUploaded, setLogoUploaded] = useState(false);
+  const [bannerUploaded, setBannerUploaded] = useState(false);
 
   // Security & Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -94,6 +97,14 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
       city: 'Kigali, Rwanda',
       bannerUrl: seller.storeBanner || '',
       logoUrl: seller.storeLogo || '',
+      returnPolicy: seller.storeReturnPolicy || '',
+      shippingPolicy: seller.storeShippingPolicy || '',
+      facebookUrl: seller.storeFacebookUrl || '',
+      twitterUrl: seller.storeTwitterUrl || '',
+      instagramUrl: seller.storeInstagramUrl || '',
+      linkedinUrl: seller.storeLinkedinUrl || '',
+      youtubeUrl: seller.storeYoutubeUrl || '',
+      tiktokUrl: seller.storeTiktokUrl || '',
       openingHours: 'Mon - Sat: 8:00 AM - 7:00 PM',
       paymentMethod: 'MTN Mobile Money',
       momoNumber: '',
@@ -111,8 +122,28 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
       storeName: seller.storeName || prev.storeName,
       logoUrl: seller.storeLogo || prev.logoUrl,
       bannerUrl: seller.storeBanner || prev.bannerUrl,
+      returnPolicy: seller.storeReturnPolicy || prev.returnPolicy,
+      shippingPolicy: seller.storeShippingPolicy || prev.shippingPolicy,
+      facebookUrl: seller.storeFacebookUrl || prev.facebookUrl,
+      twitterUrl: seller.storeTwitterUrl || prev.twitterUrl,
+      instagramUrl: seller.storeInstagramUrl || prev.instagramUrl,
+      linkedinUrl: seller.storeLinkedinUrl || prev.linkedinUrl,
+      youtubeUrl: seller.storeYoutubeUrl || prev.youtubeUrl,
+      tiktokUrl: seller.storeTiktokUrl || prev.tiktokUrl,
     }));
-  }, [seller.storeName, seller.storeLogo, seller.storeBanner]);
+  }, [
+    seller.storeName,
+    seller.storeLogo,
+    seller.storeBanner,
+    seller.storeReturnPolicy,
+    seller.storeShippingPolicy,
+    seller.storeFacebookUrl,
+    seller.storeTwitterUrl,
+    seller.storeInstagramUrl,
+    seller.storeLinkedinUrl,
+    seller.storeYoutubeUrl,
+    seller.storeTiktokUrl,
+  ]);
 
   useEffect(() => {
     if (!logoFile) {
@@ -153,8 +184,13 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
       return;
     }
 
-    if (imageType === 'logo') setLogoFile(file);
-    else setBannerFile(file);
+    if (imageType === 'logo') {
+      setLogoFile(file);
+      setLogoUploaded(false);
+    } else {
+      setBannerFile(file);
+      setBannerUploaded(false);
+    }
   };
 
   const handleChange = <K extends keyof StoreSettings>(key: K, value: StoreSettings[K]) => {
@@ -163,38 +199,48 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((logoFile || bannerFile) && !seller.shopId) {
-      toast.error('A shop must be selected before uploading images.');
+    if (!seller.shopId) {
+      toast.warning('Select a shop first.');
       return;
     }
     setSaving(true);
     try {
       // 1. Sync seller profile to API backend (PUT /sellers/profile)
       await updateSellerProfileApi({
-        businessName: settings.storeName,
-        businessAddress: `${settings.address}, ${settings.city}`,
         phone: settings.phone,
       });
 
       let savedLogoUrl = settings.logoUrl;
       let savedBannerUrl = settings.bannerUrl;
+      let responseLogoUrl = '';
+      let responseBannerUrl = '';
 
       // 2. Sync shop details when this seller has a shop ID.
       if (seller.shopId) {
         const response = await updateShopApi(seller.shopId, {
           name: settings.storeName,
           description: settings.bio,
+          email: settings.email,
           address: `${settings.address}, ${settings.city}`,
           phone: settings.phone,
-          slug: settings.slug,
-          logoFile,
-          bannerFile,
+          returnPolicy: settings.returnPolicy,
+          shippingPolicy: settings.shippingPolicy,
+          facebookUrl: settings.facebookUrl,
+          twitterUrl: settings.twitterUrl,
+          instagramUrl: settings.instagramUrl,
+          linkedinUrl: settings.linkedinUrl,
+          youtubeUrl: settings.youtubeUrl,
+          tiktokUrl: settings.tiktokUrl,
+          logoFile: logoUploaded ? null : logoFile,
+          bannerFile: bannerUploaded ? null : bannerFile,
         });
         const shop = (response as any)?.shop || response;
         const imageUrl = (value: unknown) =>
           typeof value === 'string' ? value : (value as any)?.url || (value as any)?.secure_url || '';
-        savedLogoUrl = imageUrl(shop?.logo) || savedLogoUrl;
-        savedBannerUrl = imageUrl(shop?.banner) || savedBannerUrl;
+        responseLogoUrl = imageUrl(shop?.logo) || imageUrl(shop?.logoUrl);
+        responseBannerUrl = imageUrl(shop?.banner) || imageUrl(shop?.bannerUrl);
+        savedLogoUrl = responseLogoUrl || savedLogoUrl;
+        savedBannerUrl = responseBannerUrl || savedBannerUrl;
       }
 
       onUpdateProfile({
@@ -203,16 +249,24 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         phone: settings.phone,
         storeLogo: savedLogoUrl,
         storeBanner: savedBannerUrl,
+        storeReturnPolicy: settings.returnPolicy,
+        storeShippingPolicy: settings.shippingPolicy,
+        storeFacebookUrl: settings.facebookUrl,
+        storeTwitterUrl: settings.twitterUrl,
+        storeInstagramUrl: settings.instagramUrl,
+        storeLinkedinUrl: settings.linkedinUrl,
+        storeYoutubeUrl: settings.youtubeUrl,
+        storeTiktokUrl: settings.tiktokUrl,
         businessAddress: `${settings.address}, ${settings.city}`,
       });
       setSettings((prev) => ({ ...prev, logoUrl: savedLogoUrl, bannerUrl: savedBannerUrl }));
-      setLogoFile(null);
-      setBannerFile(null);
+      if (logoFile && !logoUploaded) setLogoUploaded(true);
+      if (bannerFile && !bannerUploaded) setBannerUploaded(true);
 
-      toast.success('Store settings saved successfully!');
+      toast.success('Settings saved.');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to save settings. Please try again.');
+      toast.error('Settings save failed.');
     } finally {
       setSaving(false);
     }
@@ -233,9 +287,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         businessType: businessData.businessType,
         businessAddress: businessData.businessAddress,
       });
-      toast.success('Business information updated successfully!');
+      toast.success('Business details saved.');
     } catch {
-      toast.error('Failed to update business information.');
+      toast.error('Business update failed.');
     } finally {
       setSavingBusiness(false);
     }
@@ -245,7 +299,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
   const handleSubmitOnboardingVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessData.businessName.trim()) {
-      toast.warning('Business name is required for verification.');
+      toast.warning('Enter a business name.');
       return;
     }
     setSubmittingOnboarding(true);
@@ -254,14 +308,25 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         businessName: businessData.businessName,
         businessType: businessData.businessType,
         businessAddress: businessData.businessAddress,
+        businessPhone: businessData.businessPhone,
+        registrationNumber: businessData.registrationNumber,
         country: 'Rwanda',
         city: 'Kigali',
-        taxId: businessData.taxId || businessData.registrationNumber,
+        taxId: businessData.taxId,
       });
-      setApplicationData(res || { status: 'PENDING' });
-      toast.success('Business verification submitted for onboarding review!');
+      const application = (res as any)?.application || (res as any)?.data || res;
+      setApplicationData(application || { status: 'PENDING' });
+      onUpdateProfile({
+        businessName: businessData.businessName,
+        businessType: businessData.businessType,
+        businessAddress: businessData.businessAddress,
+        businessPhone: businessData.businessPhone,
+        verificationStatus: application?.status || 'PENDING',
+        isVerified: application?.status === 'APPROVED' || application?.status === 'VERIFIED',
+      });
+      toast.success('Verification submitted.');
     } catch {
-      toast.error('Could not submit onboarding verification. Please check fields.');
+      toast.error('Verification submission failed.');
     } finally {
       setSubmittingOnboarding(false);
     }
@@ -271,11 +336,11 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword) {
-      toast.warning('Please enter a new password');
+      toast.warning('Enter a new password.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.warning('New password and confirm password do not match');
+      toast.warning('Passwords do not match.');
       return;
     }
     setIsChangingPassword(true);
@@ -284,13 +349,12 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         currentPassword,
         newPassword,
       });
-      toast.success('Password updated successfully!');
+      toast.success('Password updated.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to update password. Please check your current password.';
-      toast.error(msg);
+      toast.error(getSellerApiErrorMessage(err, 'Password update failed.'));
     } finally {
       setIsChangingPassword(false);
     }
@@ -302,9 +366,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
     setIsSendingCode(true);
     try {
       await resendVerificationApi(seller.email);
-      toast.success(`Verification email sent to ${seller.email}`);
+      toast.success('Verification email sent.');
     } catch {
-      toast.error('Failed to resend verification email');
+      toast.error('Email could not be sent.');
     } finally {
       setIsSendingCode(false);
     }
@@ -314,7 +378,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!verificationCode.trim()) {
-      toast.warning('Please enter verification code');
+      toast.warning('Enter the verification code.');
       return;
     }
     setIsVerifyingCode(true);
@@ -323,11 +387,11 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         email: seller.email,
         code: verificationCode.trim(),
       });
-      toast.success('Email verified successfully!');
+      toast.success('Email verified.');
       onUpdateProfile({ isVerified: true });
       setVerificationCode('');
     } catch {
-      toast.error('Invalid or expired verification code');
+      toast.error('Invalid or expired code.');
     } finally {
       setIsVerifyingCode(false);
     }
@@ -395,25 +459,35 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
             <div className="space-y-3">
               <span className="block text-xs font-bold text-gray-700">Store Visual Preview</span>
               <div className="relative rounded-xl overflow-hidden bg-gray-100 h-36 border border-gray-200">
-                <img
-                  src={bannerPreview}
-                  alt="Store Banner"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80';
-                  }}
-                />
-                <div className="absolute bottom-3 left-4 flex items-center gap-3">
+                {bannerPreview ? (
                   <img
-                    src={logoPreview}
-                    alt="Store Logo"
-                    className="w-14 h-14 rounded-full border-2 border-white object-cover shadow-md"
+                    src={bannerPreview}
+                    alt="Store Banner"
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80';
+                        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80';
                     }}
                   />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-gray-500">No banner selected</div>
+                )}
+                <div className="absolute bottom-3 left-4 flex items-center gap-3">
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Store Logo"
+                      className="w-14 h-14 rounded-full border-2 border-white object-cover shadow-md"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80';
+                      }}
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[10px] font-bold text-gray-500 shadow-md">
+                      Logo
+                    </div>
+                  )}
                   <div className="bg-black/60 backdrop-blur-xs text-white px-3 py-1 rounded-lg">
                     <span className="font-bold text-sm block leading-tight">{settings.storeName}</span>
                     <span className="text-[11px] text-gray-300">ecuruza.rw/store/{settings.slug}</span>
@@ -458,6 +532,50 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                 onChange={(e) => handleChange('bio', e.target.value)}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Return Policy</label>
+                <textarea
+                  rows={3}
+                  maxLength={2000}
+                  value={settings.returnPolicy || ''}
+                  onChange={(e) => handleChange('returnPolicy', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Shipping Policy</label>
+                <textarea
+                  rows={3}
+                  maxLength={2000}
+                  value={settings.shippingPolicy || ''}
+                  onChange={(e) => handleChange('shippingPolicy', e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {([
+                ['facebookUrl', 'Facebook URL'],
+                ['twitterUrl', 'Twitter URL'],
+                ['instagramUrl', 'Instagram URL'],
+                ['linkedinUrl', 'LinkedIn URL'],
+                ['youtubeUrl', 'YouTube URL'],
+                ['tiktokUrl', 'TikTok URL'],
+              ] as const).map(([key, label]) => (
+                <div key={key}>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">{label}</label>
+                  <input
+                    type="url"
+                    value={settings[key] || ''}
+                    onChange={(e) => handleChange(key, e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+                  />
+                </div>
+              ))}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -36,7 +36,7 @@ export const HelpSupportView: React.FC = () => {
   const handleSubmitTicket = (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketSubject.trim() || !ticketMessage.trim()) {
-      toast.warning('Please complete the subject and message fields.');
+      toast.warning('Complete the required fields.');
       return;
     }
 
@@ -51,7 +51,7 @@ export const HelpSupportView: React.FC = () => {
     };
 
     setSubmittedTickets((prev) => [newTicket, ...prev]);
-    toast.success('Your support ticket has been submitted to the merchant help desk!');
+    toast.success('Support request sent.');
     setTicketSubject('');
     setTicketMessage('');
   };

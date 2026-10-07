@@ -46,7 +46,7 @@ export const ShipmentView: React.FC<ShipmentViewProps> = ({ shipments: propShipm
     if (activeTrackingShipment && activeTrackingShipment.id === shipmentId) {
       setActiveTrackingShipment((prev) => (prev ? { ...prev, status: newStatus } : null));
     }
-    toast.success(`Shipment status updated to: ${newStatus}`);
+    toast.success('Shipment updated.');
   };
 
   return (

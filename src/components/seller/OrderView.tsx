@@ -5,11 +5,10 @@ import { updateOrderStatusApi } from '../../redux/services/sellerService';
 
 interface OrderViewProps {
   orders?: SellerOrder[];
-  onExport?: () => void;
   onUpdateStatus?: (orderId: string, status: string) => void;
 }
 
-export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExport, onUpdateStatus }) => {
+export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpdateStatus }) => {
   const [activeStatusTab, setActiveStatusTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<SellerOrder | null>(null);
@@ -62,9 +61,9 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExpo
       if (onUpdateStatus) {
         onUpdateStatus(orderId, newStatus);
       }
-      toast.success(`Order status updated to: ${newStatus}`);
+      toast.success('Order updated.');
     } catch {
-      toast.error('Could not update order status on the server.');
+      toast.error('Order update failed.');
     }
   };
 
@@ -81,18 +80,6 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onExpo
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            if (onExport) onExport();
-            else toast.success('Exporting orders as CSV...');
-          }}
-          className="self-start sm:self-auto flex items-center gap-2 rounded-xl bg-white border border-gray-300 px-4 py-2.5 text-xs md:text-sm font-semibold text-gray-800 hover:bg-gray-50 hover:text-black transition-all shadow-xs"
-        >
-          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <span>Export Orders</span>
-        </button>
       </div>
 
       {/* Status Filter Tabs */}
