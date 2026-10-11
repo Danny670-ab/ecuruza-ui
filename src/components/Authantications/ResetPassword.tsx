@@ -26,7 +26,6 @@ const ResetPassword: React.FC = () => {
       return
     }
 
-    // TODO: call API to actually reset using token/identifier
     console.log('reset password for', identifier, password, { remember })
 
     // on success navigate to login
@@ -51,7 +50,7 @@ const ResetPassword: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="New password"
-              className="w-[316px] pl-11 pr-12 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              className="w-79 pl-11 pr-12 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
             />
             <button
               type="button"
@@ -69,7 +68,7 @@ const ResetPassword: React.FC = () => {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="Confirm new password"
-              className="w-[316px] pl-4 pr-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              className="w-79 pl-4 pr-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
             />
           </div>
 
@@ -81,12 +80,12 @@ const ResetPassword: React.FC = () => {
            <div className='flex items-center justify-center'>
             <button
             type="submit"
-            className=" mb-5 w-[316px] bg-[#3F4E40] text-white py-2 rounded-md text-lg font-medium shadow flex items-center justify-center gap-2"
+            className=" mb-5 w-79 bg-[#3F4E40] text-white py-2 rounded-md text-lg font-medium shadow flex items-center justify-center gap-2"
           >
             forgot password
-            <span className="p-1 rounded-full bg-white/10">
+             <span className="p-1 rounded-full bg-white/10">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M12 11v6M8 7h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
+              <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M12 11v6M8 7h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
               </svg>
             </span>
           </button>

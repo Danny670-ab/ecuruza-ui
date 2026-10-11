@@ -23,7 +23,7 @@ const getStoreDetails = (category?: string) => {
   return { name: 'Gikundiro Store', location: 'Kigali, Rwanda', phone: '+250 780 000 000', rating: '4.5', responseTime: '2h' };
 };
 
-function Shop() {
+function ShopNow() {
   const [searchParams] = useSearchParams()
   const dealsOnly = searchParams.get('deals') === 'true'
   
@@ -228,4 +228,4 @@ function Shop() {
   )
 }
 
-export default Shop
+export default ShopNow

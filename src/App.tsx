@@ -6,11 +6,12 @@ import {
 } from 'react-router-dom';
 
 import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
 import Login from './components/Authantications/Login';
 import ForgotPassword from './components/Authantications/ForgotPassword';
 import ResetPassword from './components/Authantications/ResetPassword';
 import Home from './pages/Home';
-import Shop from './pages/Shop';
+import ShopNow from './pages/ShopNow';
 import Category from './pages/Category';
 import ProductPage from './pages/Product';
 import VerifyCode from './components/Authantications/VerfyEmail';
@@ -36,7 +37,7 @@ function AppContent() {
       <div className={isSellerDashboard ? '' : 'pt-20 overflow-auto'}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/shopnow" element={<Shop />} />
+          <Route path="/shopnow" element={<ShopNow />} />
           <Route path="/category" element={<Category />} />
           <Route path="/product/:id" element={<ProductPage />} />
 
@@ -62,7 +63,7 @@ function AppContent() {
           />
         </Routes>
       </div>
-
+      {!isSellerDashboard && <Footer />}
       <ToastContainer
         position="top-right"
         autoClose={3000}
