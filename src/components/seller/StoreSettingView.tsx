@@ -265,8 +265,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
 
       toast.success('Settings saved.');
     } catch (err) {
-      console.error(err);
-      toast.error('Settings save failed.');
+      toast.error(getSellerApiErrorMessage(err, 'Settings save failed.'));
     } finally {
       setSaving(false);
     }

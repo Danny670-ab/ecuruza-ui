@@ -11,7 +11,6 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import axiosInstance from '../axiosConfig';
-import { isAxiosError } from 'axios';
 import type {
   SellerProfile,
   SellerProduct,
@@ -86,25 +85,17 @@ function getAuthToken(): string | null {
   }
 }
 
-interface ApiErrorResponse {
-  message?: string;
-  error?: {
-    code?: string;
-    details?: { code?: string };
-  };
-}
-
 export function getSellerApiErrorMessage(error: unknown, fallback: string): string {
-  const shorten = (message: string) => message.length > 72 ? `${message.slice(0, 69)}...` : message;
-  if (isAxiosError<ApiErrorResponse>(error)) {
-    const response = error.response?.data;
-    const databaseCode = response?.error?.details?.code;
-    if (databaseCode === 'P2022') {
-      return 'API database error (P2022).';
+  console.error('[Seller API] Request failed:', error);
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = (error as { response?: { data?: unknown } }).response;
+    if (response?.data && typeof response.data === 'object') {
+      const data = response.data as { message?: unknown; error?: unknown };
+      if (typeof data.message === 'string' && data.message.trim()) return data.message;
+      if (typeof data.error === 'string' && data.error.trim()) return data.error;
     }
-    if (response?.message) return shorten(response.message);
   }
-  return error instanceof Error && error.message ? shorten(error.message) : fallback;
+  return fallback;
 }
 
 // Remove legacy seller API snapshots; seller records must come from the API.
@@ -997,9 +988,7 @@ export async function updateShopApi(
   if (shopData.logoFile) form.append('logo', shopData.logoFile);
   if (shopData.bannerFile) form.append('banner', shopData.bannerFile);
 
-  const res = await axiosInstance.put(`/shop/${shopId}`, form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const res = await axiosInstance.put(`/shop/${shopId}`, form);
   return res.data?.data || res.data;
 }
 

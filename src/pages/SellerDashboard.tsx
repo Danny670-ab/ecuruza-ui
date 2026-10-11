@@ -275,7 +275,9 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         setProducts(apiProducts);
       } catch (error) {
         setProducts([]);
-        toast.error(getSellerApiErrorMessage(error, 'Could not load products for this shop.'));
+        toast.error(getSellerApiErrorMessage(error, 'Something went wrong. Please try again.'), {
+          toastId: 'seller-products-load-error',
+        });
       }
 
       // 5. Fetch orders from real database
@@ -374,8 +376,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       setProducts((prev) => [created, ...prev]);
       toast.success('Product added.');
     } catch (err: any) {
-      const message = getSellerApiErrorMessage(err, 'Product creation failed.');
-      toast.error(message);
+      toast.error(getSellerApiErrorMessage(err, 'Something went wrong. Please try again.'));
     }
   };
 
@@ -527,6 +528,10 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
     }
   };
 
+  const handleUpgradePlan = () => {
+    toast.info('Coming soon.');
+  };
+
   const handleLogout = () => {
     setAuthToken(null);
     try {
@@ -610,10 +615,10 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
       {/* Seller Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[#eaedf0] flex flex-col justify-between py-6 px-4 transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[#eaedf0] flex flex-col py-6 px-4 transition-transform duration-300 ease-in-out md:top-20 md:bottom-0 md:h-auto md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
           }`}
       >
-        <div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {/* Header Title / Brand */}
           <div className="flex items-center justify-between px-3 mb-8">
             <div>
@@ -640,7 +645,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                   key={item.id}
                   onClick={() => handleNavClick(item.label)}
                   className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-[15px] transition-colors ${isActive
-                    ? 'bg-[#222529] text-white shadow-sm'
+                    ? 'bg-[#324035] text-white shadow-sm'
                     : 'text-[#4b5563] hover:bg-[#f3f4f6] hover:text-black'
                     }`}
                 >
@@ -654,11 +659,25 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           </nav>
         </div>
 
+        {/* Upgrade Pro Card */}
+        <div className="mt-6 shrink-0 rounded-2xl bg-[#324035] p-4 text-white shadow-sm">
+          <h4 className="text-base font-bold">Upgrade Pro</h4>
+          <p className="mt-1 text-xs text-gray-200 leading-relaxed">
+            Discover New Features to Detailed Report And Analysis
+          </p>
+          <button
+            onClick={handleUpgradePlan}
+            className="mt-4 w-full rounded-xl bg-[#f4f6f4] py-2.5 text-center text-sm font-bold text-[#111827] transition-all hover:bg-white active:scale-98"
+          >
+            Upgrade Now
+          </button>
+        </div>
+
         {/* Logout Button */}
         <button
           id="seller-logout-btn"
           onClick={handleLogout}
-          className="mt-4 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors group"
+          className="mt-4 w-full shrink-0 flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors group"
           title="Sign out of Seller Portal"
         >
           <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -669,7 +688,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 md:ml-64">
         {/* Top Header */}
         <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-[#eaedf0] gap-4">
           <div className="flex items-center gap-3 flex-1 max-w-xl">
@@ -696,7 +715,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search orders, products, customers..."
-                className="w-full bg-[#dbe0e5] text-sm text-gray-800 rounded-lg pl-9 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
+                className="w-full bg-[#f4f6f4] text-sm text-gray-800 rounded-lg pl-9 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
               />
             </form>
           </div>
