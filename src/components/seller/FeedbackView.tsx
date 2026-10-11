@@ -86,16 +86,6 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
-          Customer Feedback & Reviews
-        </h2>
-        <p className="text-xs md:text-sm text-gray-500 mt-1">
-          Monitor your customer ratings, satisfaction metrics, and reply to buyer experiences
-        </p>
-      </div>
-
       {/* Review Analytics Summary Card */}
       <div className="bg-white rounded-xl border border-gray-300/80 p-6 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">

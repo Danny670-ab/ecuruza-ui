@@ -54,16 +54,6 @@ export const CustomerView: React.FC<CustomerViewProps> = ({ customers: propCusto
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
-          Customer Management
-        </h2>
-        <p className="text-xs md:text-sm text-gray-500 mt-1">
-          Monitor your customer relationships, purchase volume, and buyer engagement
-        </p>
-      </div>
-
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-gray-300/80 p-4 shadow-sm">

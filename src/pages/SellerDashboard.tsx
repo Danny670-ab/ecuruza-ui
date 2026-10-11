@@ -913,11 +913,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
           {activeTab === 'Shops' && (
             <div className="rounded-2xl border border-[#eaedf0] bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between gap-3 pb-4 border-b border-gray-100">
-                <div>
-                  <h2 className="text-xl font-bold text-black">Shops</h2>
-                  <p className="text-xs text-gray-500">Manage all stores connected to this seller account</p>
-                </div>
+              <div className="flex items-center justify-end gap-3 pb-4 border-b border-gray-100">
                 <button
                   onClick={handleCreateShop}
                   disabled={loadingAction === 'shop-create'}

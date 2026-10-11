@@ -74,19 +74,6 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
-            Order Management
-          </h2>
-          <p className="text-xs md:text-sm text-gray-500 mt-1">
-            Track, process, and fulfill customer orders across all stores
-          </p>
-        </div>
-
-      </div>
-
       {/* Status Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-gray-200">
         {statusTabs.map((tab) => {

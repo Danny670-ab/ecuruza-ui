@@ -399,17 +399,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
-            Store Settings
-          </h2>
-          <p className="text-xs md:text-sm text-gray-500 mt-1">
-            Configure your store identity, Rwandan payout preferences, and operational hours
-          </p>
-        </div>
-
         <button
           onClick={handleSave}
           disabled={saving}

@@ -58,16 +58,6 @@ export const HelpSupportView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
-          Help & Merchant Support
-        </h2>
-        <p className="text-xs md:text-sm text-gray-500 mt-1">
-          Access merchant guides, frequently asked questions, or open a support ticket
-        </p>
-      </div>
-
       {/* Support Channels Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-gray-300/80 p-4 shadow-sm flex flex-col justify-between">

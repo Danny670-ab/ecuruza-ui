@@ -19,7 +19,6 @@ interface OverviewViewProps {
 }
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
-  seller,
   metrics,
   salesHistory,
   topProducts,
@@ -28,21 +27,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   isLoading = false,
   onRefreshData,
 }) => {
-  const firstName = seller.name.split(' ')[0] || 'Seller';
-
   return (
     <div className="space-y-6">
-      {/* Welcome Greeting & Refresh */}
+      {/* Refresh */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
-            Welcome Back {firstName}
-          </h2>
-          <p className="text-xs md:text-sm text-gray-500 mt-1">
-            Here's Your current Sales Overview for {seller.storeName || 'your store'}
-          </p>
-        </div>
-
         {onRefreshData && (
           <button
             onClick={onRefreshData}

@@ -420,17 +420,8 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+      {/* Page Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-black tracking-tight">
-            Products Management
-          </h2>
-          <p className="text-xs md:text-sm text-gray-500 mt-1">
-            Manage your store inventory, pricing, catalog items, variants, and stock visibility
-          </p>
-        </div>
-
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsAddModalOpen(true)}
