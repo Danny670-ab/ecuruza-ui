@@ -18,7 +18,7 @@ import SignUp from './components/Authantications/SignUp';
 import SellerRegistration from './components/Authantications/SellerRegistration';
 import ResendEmail from './components/Authantications/ResendEmail';
 import SellerDashboard from './pages/SellerDashboard';
-
+import ProtectedSellerRoute from './components/ProtectedSellerRoute';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -54,12 +54,11 @@ function AppContent() {
 
           <Route
             path="/seller-dashboard/*"
-            element={<SellerDashboard />}
-          />
-
-          <Route
-            path="/seller-Dashboard/*"
-            element={<SellerDashboard />}
+            element={
+            <ProtectedSellerRoute>
+            <SellerDashboard />
+            </ProtectedSellerRoute>
+            }
           />
         </Routes>
       </div>
