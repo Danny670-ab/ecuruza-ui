@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+.seller-dashboard button[class*="hover:"]:not(:disabled):not([class*="text-red-"]):not([class*="text-rose-"]):hover {
+  background-color: #3d6048;
+  border-color: #3d6048;
+  color: #fff;
+}
+
+.seller-dashboard button[class*="hover:"]:not(:disabled):not([class*="text-red-"]):not([class*="text-rose-"]):hover * {
+  color: #fff;
+}
+
 /* Custom scrollbar - thin version */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */
@@ -139,4 +149,3 @@
   mask-composite: exclude;
   animation: rotate-border 1.5s linear infinite;
 }
-

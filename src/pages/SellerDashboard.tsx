@@ -635,7 +635,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen bg-[#fafbfc] text-[#111827] font-sans antialiased">
+    <div className="seller-dashboard flex min-h-screen bg-[#fafbfc] text-[#111827] font-sans antialiased">
 
       {/* Seller Sidebar */}
       <aside
@@ -701,7 +701,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         <button
           id="seller-logout-btn"
           onClick={handleLogout}
-          className="mt-4 w-full shrink-0 flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors group"
+          className="mt-4 w-full shrink-0 flex items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-[15px] font-medium text-[#4b5563] transition-colors hover:bg-[#3d6048] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3d6048]/30 group"
           title="Sign out of Seller Portal"
         >
           <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
