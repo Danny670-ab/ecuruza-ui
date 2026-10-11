@@ -101,7 +101,7 @@ export const CustomerView: React.FC<CustomerViewProps> = ({ customers: propCusto
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by customer name, email, or phone..."
-            className="w-full bg-[#dbe0e5] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
+            className="w-full bg-[#f4f6f4] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
           />
         </div>
 
@@ -109,7 +109,7 @@ export const CustomerView: React.FC<CustomerViewProps> = ({ customers: propCusto
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-[#f3f4f6] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+            className="bg-[#f4f6f4] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
           >
             <option value="All">All Statuses</option>
             <option value="VIP">VIP</option>
@@ -143,7 +143,7 @@ export const CustomerView: React.FC<CustomerViewProps> = ({ customers: propCusto
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredCustomers.map((cust) => (
-                <tr key={cust.id} className="text-gray-700 hover:bg-gray-50/70 transition-colors">
+                <tr key={cust.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
                   <td className="py-3.5 px-3">
                     <div className="flex items-center gap-3">
                       <img
@@ -179,7 +179,7 @@ export const CustomerView: React.FC<CustomerViewProps> = ({ customers: propCusto
                   <td className="py-3.5 px-3 text-right">
                     <button
                       onClick={() => setActiveMessageCustomer(cust)}
-                      className="rounded-lg bg-[#324035] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#222529] transition-colors"
+                      className="rounded-lg bg-[#324035] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#0C6227] transition-colors"
                     >
                       Message
                     </button>
@@ -229,13 +229,13 @@ export const CustomerView: React.FC<CustomerViewProps> = ({ customers: propCusto
                 <button
                   type="button"
                   onClick={() => setActiveMessageCustomer(null)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#324035] px-4 py-2 text-xs font-bold text-white hover:bg-[#222529] transition-all"
+                  className="rounded-xl bg-[#324035] px-4 py-2 text-xs font-bold text-white hover:bg-[#0C6227] transition-all"
                 >
                   Send Message
                 </button>

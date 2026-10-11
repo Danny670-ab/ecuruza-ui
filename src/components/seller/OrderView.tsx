@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { SellerOrder } from '../../types/seller';
 import { toast } from 'react-toastify';
 import { updateOrderStatusApi } from '../../redux/services/sellerService';
+import { ButtonSpinner } from './ButtonSpinner';
 
 interface OrderViewProps {
   orders?: SellerOrder[];
@@ -12,6 +13,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
   const [activeStatusTab, setActiveStatusTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<SellerOrder | null>(null);
+  const [updatingOrderStatus, setUpdatingOrderStatus] = useState<{ orderId: string; status: string } | null>(null);
 
   // Use prop orders when available (from API), otherwise empty
   const [orderList, setOrderList] = useState<SellerOrder[]>(propOrders || []);
@@ -49,6 +51,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
   }, [orderList, searchTerm, activeStatusTab]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    setUpdatingOrderStatus({ orderId, status: newStatus });
     try {
       const updated = await updateOrderStatusApi(orderId, newStatus);
       if (!updated) throw new Error('Order status update was not confirmed by the server.');
@@ -64,6 +67,8 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
       toast.success('Order updated.');
     } catch {
       toast.error('Order update failed.');
+    } finally {
+      setUpdatingOrderStatus(null);
     }
   };
 
@@ -92,14 +97,14 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
               onClick={() => setActiveStatusTab(tab.label)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
                 isActive
-                  ? 'bg-[#222529] text-white shadow-xs'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-black'
+                  ? 'bg-[#324035] text-white shadow-xs'
+                  : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
               }`}
             >
               <span>{tab.label}</span>
               <span
                 className={`text-[11px] px-1.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
+                  isActive ? 'bg-white/20 text-white' : 'bg-[#e9eeea] text-gray-700'
                 }`}
               >
                 {tab.count}
@@ -122,7 +127,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by order ID, product, or customer..."
-            className="w-full bg-[#dbe0e5] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
+            className="w-full bg-[#f4f6f4] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
           />
         </div>
       </div>
@@ -152,7 +157,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
                 </tr>
               ) : (
                 filteredOrders.map((order) => (
-                  <tr key={order.id} className="text-gray-700 hover:bg-gray-50/70 transition-colors">
+                  <tr key={order.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
                     <td className="py-3.5 px-3 font-semibold text-black">{order.code}</td>
                     <td className="py-3.5 px-3">
                       <span className="font-semibold text-gray-900 block leading-tight">
@@ -182,7 +187,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
                     <td className="py-3.5 px-3 text-right">
                       <button
                         onClick={() => setSelectedOrder(order)}
-                        className="rounded-lg bg-[#324035] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#222529] transition-colors"
+                        className="rounded-lg bg-[#324035] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#0C6227] transition-colors"
                       >
                         Details
                       </button>
@@ -213,7 +218,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
             </div>
 
             <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-xl text-xs">
+              <div className="grid grid-cols-2 gap-3 bg-[#f4f6f4] p-3 rounded-xl text-xs">
                 <div>
                   <span className="text-gray-500 block">Customer</span>
                   <span className="font-bold text-gray-900">{selectedOrder.customerName}</span>
@@ -228,7 +233,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
 
               <div>
                 <span className="text-xs font-bold text-gray-700 block mb-1">Shipping Address</span>
-                <p className="text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                <p className="text-xs text-gray-600 bg-[#f4f6f4] p-2.5 rounded-lg border border-gray-100">
                   {selectedOrder.shippingAddress || 'KG 14 Ave, Nyarugenge, Kigali, Rwanda'}
                 </p>
               </div>
@@ -252,13 +257,16 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
                     <button
                       key={st}
                       onClick={() => handleUpdateStatus(selectedOrder.id, st)}
+                      disabled={updatingOrderStatus?.orderId === selectedOrder.id}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         selectedOrder.status === st
                           ? 'bg-[#324035] text-white shadow-xs'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-[#f4f6f4] text-gray-700 hover:bg-[#e9eeea]'
                       }`}
                     >
-                      {st}
+                      {updatingOrderStatus?.orderId === selectedOrder.id && updatingOrderStatus.status === st
+                        ? <><ButtonSpinner className="mr-1 inline h-3 w-3" /> Updating...</>
+                        : st}
                     </button>
                   ))}
                 </div>
@@ -268,7 +276,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="rounded-xl bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200 transition-colors"
+                className="rounded-xl bg-[#f4f6f4] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea] transition-colors"
               >
                 Close
               </button>

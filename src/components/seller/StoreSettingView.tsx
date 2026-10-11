@@ -12,6 +12,7 @@ import {
   verifyEmailApi,
   resendVerificationApi,
 } from '../../redux/services/sellerService';
+import { ButtonSpinner } from './ButtonSpinner';
 
 interface StoreSettingViewProps {
   seller: SellerProfile;
@@ -412,8 +413,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="self-start sm:self-auto flex items-center gap-2 rounded-xl bg-[#324035] px-5 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#222529] transition-all shadow-sm active:scale-98"
+          className="self-start sm:self-auto flex items-center gap-2 rounded-xl bg-[#324035] px-5 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-all shadow-sm active:scale-98"
         >
+          {saving && <ButtonSpinner />}
           {saving ? 'Saving...' : 'Save All Changes'}
         </button>
       </div>
@@ -435,8 +437,8 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 rounded-xl font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
                 isActive
-                  ? 'bg-[#222529] text-white shadow-xs'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-black'
+                  ? 'bg-[#324035] text-white shadow-xs'
+                  : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
               }`}
             >
               {tab.label}
@@ -457,7 +459,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
             {/* Banner & Logo Visual Preview */}
             <div className="space-y-3">
               <span className="block text-xs font-bold text-gray-700">Store Visual Preview</span>
-              <div className="relative rounded-xl overflow-hidden bg-gray-100 h-36 border border-gray-200">
+              <div className="relative rounded-xl overflow-hidden bg-[#f4f6f4] h-36 border border-gray-200">
                 {bannerPreview ? (
                   <img
                     src={bannerPreview}
@@ -483,11 +485,11 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                       }}
                     />
                   ) : (
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[10px] font-bold text-gray-500 shadow-md">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-[#f4f6f4] text-[10px] font-bold text-gray-500 shadow-md">
                       Logo
                     </div>
                   )}
-                  <div className="bg-black/60 backdrop-blur-xs text-white px-3 py-1 rounded-lg">
+                  <div className="bg-[#0C6227]/90 backdrop-blur-xs text-white px-3 py-1 rounded-lg">
                     <span className="font-bold text-sm block leading-tight">{settings.storeName}</span>
                     <span className="text-[11px] text-gray-300">ecuruza.rw/store/{settings.slug}</span>
                   </div>
@@ -509,8 +511,8 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Store URL Slug</label>
-                <div className="flex rounded-lg border border-gray-300 bg-gray-50 overflow-hidden">
-                  <span className="px-3 py-2 text-xs text-gray-500 bg-gray-100 border-r border-gray-300 flex items-center">
+                <div className="flex rounded-lg border border-gray-300 bg-[#f4f6f4] overflow-hidden">
+                  <span className="px-3 py-2 text-xs text-gray-500 bg-[#f4f6f4] border-r border-gray-300 flex items-center">
                     ecuruza.rw/store/
                   </span>
                   <input
@@ -584,7 +586,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                   type="file"
                   accept="image/jpeg,image/png,image/gif,image/webp"
                   onChange={(event) => selectImageFile(event, 'logo')}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-[#f4f6f4] file:px-3 file:py-1.5 file:text-xs file:font-semibold"
                 />
                 <p className="mt-1 text-[11px] text-gray-500">JPEG, PNG, GIF, or WebP. Maximum 5 MB.</p>
               </div>
@@ -595,7 +597,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                   type="file"
                   accept="image/jpeg,image/png,image/gif,image/webp"
                   onChange={(event) => selectImageFile(event, 'banner')}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-[#f4f6f4] file:px-3 file:py-1.5 file:text-xs file:font-semibold"
                 />
                 <p className="mt-1 text-[11px] text-gray-500">JPEG, PNG, GIF, or WebP. Maximum 5 MB.</p>
               </div>
@@ -713,7 +715,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                     Verification Rejected
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#f4f6f4] text-gray-700 border border-gray-200">
                     Pending Submission
                   </span>
                 )}
@@ -806,8 +808,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                 type="button"
                 onClick={handleUpdateBusinessInfo}
                 disabled={savingBusiness}
-                className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs md:text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-xs"
+                className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs md:text-sm font-semibold text-gray-700 hover:bg-[#f4f6f4] transition-all shadow-xs"
               >
+                {savingBusiness && <ButtonSpinner />}
                 {savingBusiness ? 'Saving...' : 'Update Business Details (PUT /sellers/business)'}
               </button>
 
@@ -815,10 +818,10 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                 type="button"
                 onClick={handleSubmitOnboardingVerification}
                 disabled={submittingOnboarding || seller.isVerified}
-                className="rounded-xl bg-[#0C6227] px-4 py-2 text-xs md:text-sm font-bold text-white hover:bg-[#094d1e] transition-all shadow-xs disabled:opacity-50"
+                className="rounded-xl bg-[#324035] px-4 py-2 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-all shadow-xs disabled:opacity-50"
               >
                 {submittingOnboarding
-                  ? 'Submitting...'
+                  ? <><ButtonSpinner /> Submitting...</>
                   : seller.isVerified
                   ? '✓ Verification Completed'
                   : 'Submit Verification for Onboarding (POST /sellers/onboarding)'}
@@ -887,7 +890,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
             </div>
 
             {/* Email Verification Card */}
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+            <div className="bg-[#f4f6f4] rounded-xl p-4 border border-gray-200 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                   <span className="text-xs font-bold text-gray-700 block">Registered Email</span>
@@ -919,16 +922,18 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                     type="button"
                     onClick={handleVerifyCode}
                     disabled={isVerifyingCode}
-                    className="rounded-lg bg-[#324035] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#222529] disabled:opacity-50"
+                    className="rounded-lg bg-[#324035] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#0C6227] disabled:opacity-50"
                   >
+                    {isVerifyingCode && <ButtonSpinner />}
                     {isVerifyingCode ? 'Verifying...' : 'Verify Email (POST /auth/verify-email)'}
                   </button>
                   <button
                     type="button"
                     onClick={handleResendEmail}
                     disabled={isSendingCode}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] disabled:opacity-50"
                   >
+                    {isSendingCode && <ButtonSpinner />}
                     {isSendingCode ? 'Sending...' : 'Resend Code (POST /auth/resend-verification)'}
                   </button>
                 </div>
@@ -976,8 +981,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                   type="button"
                   onClick={handleChangePassword}
                   disabled={isChangingPassword}
-                  className="rounded-xl bg-[#324035] px-5 py-2 text-xs md:text-sm font-bold text-white hover:bg-[#222529] transition-all disabled:opacity-50"
+                  className="rounded-xl bg-[#324035] px-5 py-2 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-all disabled:opacity-50"
                 >
+                  {isChangingPassword && <ButtonSpinner />}
                   {isChangingPassword ? 'Updating Password...' : 'Update Password (POST /auth/change-password)'}
                 </button>
               </div>
@@ -993,7 +999,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
             </h3>
 
             <div className="space-y-3">
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-[#f4f6f4] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={settings.notificationsEnabled}
@@ -1006,7 +1012,7 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-[#f4f6f4] cursor-pointer">
                 <input
                   type="checkbox"
                   defaultChecked
@@ -1026,8 +1032,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-[#324035] px-6 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#222529] transition-all shadow-sm"
+            className="rounded-xl bg-[#324035] px-6 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-all shadow-sm"
           >
+            {saving && <ButtonSpinner />}
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </div>

@@ -105,7 +105,7 @@ export const HelpSupportView: React.FC = () => {
 
         <div className="bg-white rounded-xl border border-gray-300/80 p-4 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-800 flex items-center justify-center font-bold mb-3">
+            <div className="w-9 h-9 rounded-lg bg-[#f4f6f4] text-gray-800 flex items-center justify-center font-bold mb-3">
               ⚡
             </div>
             <h4 className="text-sm font-bold text-gray-900">System Status</h4>
@@ -137,7 +137,7 @@ export const HelpSupportView: React.FC = () => {
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full text-left p-3.5 flex items-center justify-between gap-3 bg-gray-50/70 hover:bg-gray-100/70 transition-colors"
+                    className="w-full text-left p-3.5 flex items-center justify-between gap-3 bg-[#f4f6f4]/70 hover:bg-[#f4f6f4]/70 transition-colors"
                   >
                     <span className="text-xs md:text-sm font-bold text-gray-900">{faq.q}</span>
                     <span className="text-gray-500 font-bold">{isOpen ? '−' : '+'}</span>
@@ -216,7 +216,7 @@ export const HelpSupportView: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full rounded-xl bg-[#324035] py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#222529] transition-all shadow-sm active:scale-98"
+              className="w-full rounded-xl bg-[#324035] py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-all shadow-sm active:scale-98"
             >
               Submit Ticket
             </button>
@@ -228,7 +228,7 @@ export const HelpSupportView: React.FC = () => {
               <span className="text-xs font-bold text-gray-800 block mb-2">Recent Tickets</span>
               <div className="space-y-2">
                 {submittedTickets.map((tck) => (
-                  <div key={tck.id} className="p-2.5 rounded-lg bg-gray-50 text-xs flex justify-between items-center">
+                  <div key={tck.id} className="p-2.5 rounded-lg bg-[#f4f6f4] text-xs flex justify-between items-center">
                     <div>
                       <span className="font-semibold text-gray-900 block">{tck.subject}</span>
                       <span className="text-[10px] text-gray-400">{tck.id} · {tck.createdAt}</span>

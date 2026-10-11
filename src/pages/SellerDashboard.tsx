@@ -42,6 +42,7 @@ import { ShipmentView } from '../components/seller/ShipmentView';
 import { StoreSettingView } from '../components/seller/StoreSettingView';
 import { FeedbackView } from '../components/seller/FeedbackView';
 import { HelpSupportView } from '../components/seller/HelpSupportView';
+import { ButtonSpinner } from '../components/seller/ButtonSpinner';
 
 interface SellerDashboardProps {
   seller?: SellerProfile;
@@ -122,6 +123,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const [shops, setShops] = useState<Array<{ id: string; name: string; slug?: string; status?: string }>>([]);
   const [selectedShopId, setSelectedShopId] = useState<string | undefined>(sellerProfile.shopId);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   // Load ALL real data from backend APIs
   const loadRealData = useCallback(async () => {
@@ -398,16 +400,30 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
   // Notifications Actions
   const handleMarkAsRead = async (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-    await markNotificationAsReadApi(id);
+    setLoadingAction(`notification-${id}`);
+    try {
+      await markNotificationAsReadApi(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (error) {
+      toast.error(getSellerApiErrorMessage(error, 'Could not update notification.'));
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   const handleMarkAllAsRead = async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    await markAllNotificationsAsReadApi();
-    toast.success('All marked as read.');
+    setLoadingAction('notifications-all');
+    try {
+      await markAllNotificationsAsReadApi();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      toast.success('All marked as read.');
+    } catch (error) {
+      toast.error(getSellerApiErrorMessage(error, 'Could not update notifications.'));
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   const handleUpdateProfile = (updated: Partial<SellerProfile>) => {
@@ -465,24 +481,28 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const handleDeleteShop = async (shopId: string) => {
     if (!window.confirm('Delete this shop? This action cannot be undone.')) return;
 
-    const deleted = await deleteShopApi(shopId);
-    if (!deleted) {
-      toast.error('Shop deletion failed.');
-      return;
-    }
+    setLoadingAction(`shop-delete-${shopId}`);
+    try {
+      const deleted = await deleteShopApi(shopId);
+      if (!deleted) throw new Error('Shop deletion was not confirmed by the server.');
 
-    const remainingShops = shops.filter((shop) => shop.id !== shopId);
-    setShops(remainingShops);
-    if (selectedShopId === shopId) {
-      const nextShop = remainingShops[0];
-      setSelectedShopId(nextShop?.id);
-      setSellerProfile((prev) => ({
-        ...prev,
-        shopId: nextShop?.id,
-        storeName: nextShop?.name || 'My Store',
-      }));
+      const remainingShops = shops.filter((shop) => shop.id !== shopId);
+      setShops(remainingShops);
+      if (selectedShopId === shopId) {
+        const nextShop = remainingShops[0];
+        setSelectedShopId(nextShop?.id);
+        setSellerProfile((prev) => ({
+          ...prev,
+          shopId: nextShop?.id,
+          storeName: nextShop?.name || 'My Store',
+        }));
+      }
+      toast.success('Shop deleted.');
+    } catch (error) {
+      toast.error(getSellerApiErrorMessage(error, 'Shop deletion failed.'));
+    } finally {
+      setLoadingAction(null);
     }
-    toast.success('Shop deleted.');
   };
 
   const handleCreateShop = async () => {
@@ -492,6 +512,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       return;
     }
 
+    setLoadingAction('shop-create');
     try {
       const nextName = sellerProfile.storeName?.trim() || `${sellerProfile.name || 'My'} Shop`;
       const created = await createShopApi({
@@ -525,6 +546,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         return;
       }
       toast.error(message);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -646,7 +669,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                   onClick={() => handleNavClick(item.label)}
                   className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-[15px] transition-colors ${isActive
                     ? 'bg-[#324035] text-white shadow-sm'
-                    : 'text-[#4b5563] hover:bg-[#f3f4f6] hover:text-black'
+                    : 'text-[#4b5563] hover:bg-[#f4f6f4] hover:text-black'
                     }`}
                 >
                   <span className={`${isActive ? 'text-white' : 'text-[#4b5563]'}`}>
@@ -723,7 +746,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           {/* Seller Profile & Shop Switcher */}
           <div className="flex items-center gap-3">
             {shops.length > 0 && (
-              <div className="hidden md:flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5">
+              <div className="hidden md:flex items-center gap-2 rounded-xl border border-gray-200 bg-[#f4f6f4] px-2 py-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">Shop</span>
                 <select
                   value={selectedShopId || ''}
@@ -742,7 +765,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-xl text-gray-600 hover:text-black hover:bg-gray-100 transition-colors focus:outline-none"
+                className="relative p-2 rounded-xl text-gray-600 hover:text-black hover:bg-[#f4f6f4] transition-colors focus:outline-none"
                 title="Notifications"
                 aria-label="View notifications"
               >
@@ -759,7 +782,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               {/* Notification Popover Dropdown */}
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-[#f4f6f4]/50">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-gray-900">Notifications</span>
                       <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
@@ -769,9 +792,11 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                     {notifications.filter((n) => !n.isRead).length > 0 && (
                       <button
                         onClick={handleMarkAllAsRead}
-                        className="text-xs text-emerald-700 hover:text-emerald-900 font-semibold"
+                        disabled={loadingAction === 'notifications-all'}
+                        className="flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-semibold disabled:opacity-50"
                       >
-                        Mark all read
+                        {loadingAction === 'notifications-all' && <ButtonSpinner className="h-3 w-3" />}
+                        {loadingAction === 'notifications-all' ? 'Marking...' : 'Mark all read'}
                       </button>
                     )}
                   </div>
@@ -785,17 +810,18 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                       notifications.map((n) => (
                         <div
                           key={n.id}
-                          onClick={() => handleMarkAsRead(n.id)}
-                          className={`p-3.5 hover:bg-gray-50/80 cursor-pointer transition-colors ${
+                          onClick={() => void handleMarkAsRead(n.id)}
+                          aria-disabled={loadingAction === `notification-${n.id}`}
+                          className={`p-3.5 hover:bg-[#f4f6f4]/80 cursor-pointer transition-colors ${
                             !n.isRead ? 'bg-emerald-50/30' : ''
-                          }`}
+                          } ${loadingAction === `notification-${n.id}` ? 'opacity-60 pointer-events-none' : ''}`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <h5 className="font-semibold text-xs text-gray-900 leading-tight">
                               {n.title}
                             </h5>
                             <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                              {n.createdAt}
+                              {loadingAction === `notification-${n.id}` ? <ButtonSpinner className="h-3 w-3" /> : n.createdAt}
                             </span>
                           </div>
                           <p className="text-[11px] text-gray-600 mt-1 leading-relaxed">
@@ -856,15 +882,17 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                 </div>
                 <button
                   onClick={handleCreateShop}
-                  className="rounded-xl bg-[#0C6227] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0b4f20]"
+                  disabled={loadingAction === 'shop-create'}
+                  className="rounded-xl bg-[#324035] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0C6227] disabled:opacity-50"
                 >
-                  + Add Shop
+                  {loadingAction === 'shop-create' && <ButtonSpinner className="mr-2 inline h-4 w-4" />}
+                  {loadingAction === 'shop-create' ? 'Adding Shop...' : '+ Add Shop'}
                 </button>
               </div>
 
               <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {shops.length === 0 ? (
-                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center text-sm text-gray-500">
+                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-[#f4f6f4] p-8 text-center text-sm text-gray-500">
                     No shops yet. Add your first shop to begin selling.
                   </div>
                 ) : (
@@ -883,7 +911,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                             <p className="text-[11px] text-gray-500 mt-1">{shop.slug || 'shop-slug'}</p>
                           </div>
                           <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${
-                            isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                            isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-[#f4f6f4] text-gray-600'
                           }`}>
                             {isActive ? 'Selected' : shop.status || 'Active'}
                           </span>
@@ -893,7 +921,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                           <button
                             onClick={() => handleShopSelect(shop.id)}
                             className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold ${
-                              isActive ? 'bg-[#0C6227] text-white' : 'bg-gray-100 text-gray-700'
+                              isActive ? 'bg-[#324035] text-white' : 'bg-[#f4f6f4] text-gray-700'
                             }`}
                           >
                             {isActive ? 'Current Shop' : 'Select Shop'}
@@ -906,9 +934,10 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                           </button>
                           <button
                             onClick={() => handleDeleteShop(shop.id)}
-                            className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                            disabled={loadingAction === `shop-delete-${shop.id}`}
+                            className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
                           >
-                            Delete
+                            {loadingAction === `shop-delete-${shop.id}` ? <ButtonSpinner className="inline h-3 w-3" /> : 'Delete'}
                           </button>
                         </div>
                       </div>

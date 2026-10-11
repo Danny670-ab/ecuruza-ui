@@ -11,11 +11,12 @@ import {
   updateVariantInventoryApi,
   fetchVariantInventoryApi,
 } from '../../redux/services/sellerService';
+import { ButtonSpinner } from './ButtonSpinner';
 
 interface ProductsViewProps {
   products: SellerProduct[];
-  onAddProduct: (product: Omit<SellerProduct, 'id'> & { imageFile?: File | null }) => void;
-  onDeleteProduct: (id: string) => void;
+  onAddProduct: (product: Omit<SellerProduct, 'id'> & { imageFile?: File | null }) => void | Promise<void>;
+  onDeleteProduct: (id: string) => void | Promise<void>;
   onEditProduct?: (product: SellerProduct) => void;
   categoriesList?: Array<{ id: string; name: string }>;
   shopId?: string;
@@ -43,6 +44,10 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   const [editingProduct, setEditingProduct] = useState<SellerProduct | null>(null);
   const [viewingProduct, setViewingProduct] = useState<SellerProduct | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [loadingDetailsId, setLoadingDetailsId] = useState<string | null>(null);
+  const [loadingVariantsId, setLoadingVariantsId] = useState<string | null>(null);
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
 
   // Variant & Inventory management modal
   const [variantProduct, setVariantProduct] = useState<SellerProduct | null>(null);
@@ -51,6 +56,9 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   const [isLoadingVariants, setIsLoadingVariants] = useState(false);
   const [isAddingVariant, setIsAddingVariant] = useState(false);
   const [savingVariantId, setSavingVariantId] = useState<string | null>(null);
+  const [isCreatingVariant, setIsCreatingVariant] = useState(false);
+  const [deletingVariantId, setDeletingVariantId] = useState<string | null>(null);
+  const [updatingVariantStockId, setUpdatingVariantStockId] = useState<string | null>(null);
   const [newVariantName, setNewVariantName] = useState('');
   const [newVariantSku, setNewVariantSku] = useState('');
   const [newVariantPrice, setNewVariantPrice] = useState('');
@@ -179,6 +187,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   const handleOpenDetails = async (product: SellerProduct) => {
     setViewingProduct(product);
     setIsLoadingDetails(true);
+    setLoadingDetailsId(product.id);
     try {
       const realDetails = await fetchProductByIdApi(product.id);
       if (realDetails) {
@@ -188,6 +197,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       // Keep existing product if fetch fails
     } finally {
       setIsLoadingDetails(false);
+      setLoadingDetailsId(null);
     }
   };
 
@@ -196,6 +206,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     setVariantProduct(product);
     setIsLoadingVariants(true);
     setIsAddingVariant(false);
+    setLoadingVariantsId(product.id);
     try {
       const list = await fetchProductVariantsApi(product.id);
       const variantsWithInventory = await Promise.all(
@@ -215,6 +226,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       setVariants([]);
     } finally {
       setIsLoadingVariants(false);
+      setLoadingVariantsId(null);
     }
   };
 
@@ -229,6 +241,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     const priceNum = parseFloat(newVariantPrice) || variantProduct.price;
     const stockNum = parseInt(newVariantStock, 10) || 0;
 
+    setIsCreatingVariant(true);
     try {
       const created = await createProductVariantApi(variantProduct.id, {
         name: newVariantName.trim(),
@@ -249,6 +262,8 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       setIsAddingVariant(false);
     } catch {
       toast.error('Failed to add variant');
+    } finally {
+      setIsCreatingVariant(false);
     }
   };
 
@@ -282,6 +297,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   // Delete Variant (DELETE /api/v1/products/variants/{variantId})
   const handleDeleteVariant = async (variantId: string) => {
     if (!window.confirm('Delete this product variant?')) return;
+    setDeletingVariantId(variantId);
     try {
       const deleted = await deleteProductVariantApi(variantId);
       if (!deleted) throw new Error('The variant could not be deleted from the server.');
@@ -294,11 +310,14 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       toast.success('Variant removed');
     } catch {
       toast.error('Failed to delete variant');
+    } finally {
+      setDeletingVariantId(null);
     }
   };
 
   // Quick Update Variant Inventory (PUT /api/v1/products/variants/{variantId}/inventory)
   const handleUpdateVariantStock = async (variantId: string, newInventory: number) => {
+    setUpdatingVariantStockId(variantId);
     try {
       await updateVariantInventoryApi(variantId, newInventory);
       setVariants((prev) =>
@@ -307,6 +326,8 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       toast.success('Variant inventory updated');
     } catch {
       toast.error('Inventory update failed.');
+    } finally {
+      setUpdatingVariantStockId(null);
     }
   };
 
@@ -338,7 +359,16 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     }
   };
 
-  const handleCreateProduct = (e: React.FormEvent) => {
+  const handleDeleteProduct = async (productId: string) => {
+    setDeletingProductId(productId);
+    try {
+      await onDeleteProduct(productId);
+    } finally {
+      setDeletingProductId(null);
+    }
+  };
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProductName.trim()) {
       toast.warning('Please enter a product name');
@@ -374,14 +404,18 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       shopId,
       imageFile: newProductImage,
     };
-    onAddProduct(newProduct);
-
-    setIsAddModalOpen(false);
-    setNewProductName('');
-    setNewProductPrice('');
-    setNewProductStock('');
-    setNewProductImage(null);
-    setNewProductDesc('');
+    setIsCreatingProduct(true);
+    try {
+      await onAddProduct(newProduct);
+      setIsAddModalOpen(false);
+      setNewProductName('');
+      setNewProductPrice('');
+      setNewProductStock('');
+      setNewProductImage(null);
+      setNewProductDesc('');
+    } finally {
+      setIsCreatingProduct(false);
+    }
   };
 
   return (
@@ -400,7 +434,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 rounded-xl bg-[#324035] px-4 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#222529] transition-all shadow-sm active:scale-98"
+            className="flex items-center gap-2 rounded-xl bg-[#324035] px-4 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-all shadow-sm active:scale-98"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -416,8 +450,8 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           onClick={() => setActiveSubTab('all')}
           className={`px-4 py-2 rounded-xl font-medium text-xs md:text-sm transition-all ${
             activeSubTab === 'all'
-              ? 'bg-[#222529] text-white shadow-xs'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-black'
+              ? 'bg-[#324035] text-white shadow-xs'
+              : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
           }`}
         >
           All Products ({products.length})
@@ -426,8 +460,8 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           onClick={() => setActiveSubTab('inventory')}
           className={`px-4 py-2 rounded-xl font-medium text-xs md:text-sm transition-all ${
             activeSubTab === 'inventory'
-              ? 'bg-[#222529] text-white shadow-xs'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-black'
+              ? 'bg-[#324035] text-white shadow-xs'
+              : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
           }`}
         >
           Inventory & Stock Management
@@ -471,7 +505,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by product name or category..."
-            className="w-full bg-[#dbe0e5] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
+            className="w-full bg-[#f4f6f4] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
           />
         </div>
 
@@ -480,7 +514,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-[#f3f4f6] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+            className="bg-[#f4f6f4] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
           >
             {categories.map((cat) => (
               <option key={cat} value={cat}>
@@ -493,7 +527,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-[#f3f4f6] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+            className="bg-[#f4f6f4] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
           >
             <option value="All">All Statuses</option>
             <option value="Available">Available</option>
@@ -535,7 +569,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   </tr>
                 ) : (
                   filteredProducts.map((prod) => (
-                    <tr key={prod.id} className="text-gray-700 hover:bg-gray-50/70 transition-colors">
+                    <tr key={prod.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
                       <td className="py-3.5 px-3">
                         <div className="flex items-center gap-3">
                           <img
@@ -584,35 +618,38 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                         <div className="flex items-center justify-end gap-1.5 flex-wrap">
                           <button
                             onClick={() => handleOpenDetails(prod)}
-                            className="rounded-lg bg-[#e2e4e8] px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-300 transition-colors"
+                            disabled={loadingDetailsId === prod.id}
+                            className="rounded-lg bg-[#f4f6f4] px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea] transition-colors"
                             title="View product details"
                           >
-                            Details
+                            {loadingDetailsId === prod.id ? <ButtonSpinner className="inline h-3 w-3" /> : 'Details'}
                           </button>
                           <button
                             onClick={() => handleOpenEdit(prod)}
-                            className="rounded-lg bg-[#324035] px-2 py-1 text-xs font-semibold text-white hover:bg-[#222529] transition-colors"
+                            className="rounded-lg bg-[#324035] px-2 py-1 text-xs font-semibold text-white hover:bg-[#0C6227] transition-colors"
                             title="Edit product"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleOpenVariantsModal(prod)}
-                            className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                            disabled={loadingVariantsId === prod.id}
+                            className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] transition-colors"
                             title="Manage Variants"
                           >
-                            Variants
+                            {loadingVariantsId === prod.id ? <ButtonSpinner className="inline h-3 w-3" /> : 'Variants'}
                           </button>
                           <button
                             onClick={() => {
                               if (window.confirm(`Are you sure you want to remove ${prod.name}?`)) {
-                                onDeleteProduct(prod.id);
+                                void handleDeleteProduct(prod.id);
                               }
                             }}
-                            className="rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors"
+                            disabled={deletingProductId === prod.id}
+                            className="rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors disabled:opacity-50"
                             title="Delete product"
                           >
-                            Delete
+                            {deletingProductId === prod.id ? <ButtonSpinner className="inline h-3 w-3" /> : 'Delete'}
                           </button>
                         </div>
                       </td>
@@ -648,7 +685,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredProducts.map((prod) => (
-                  <tr key={prod.id} className="text-gray-700 hover:bg-gray-50/70 transition-colors">
+                  <tr key={prod.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
                     <td className="py-3.5 px-3 font-semibold text-gray-900">
                       {prod.name}
                     </td>
@@ -685,8 +722,9 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                         <button
                           onClick={() => handleQuickUpdateStock(prod.id)}
                           disabled={updatingStockId === prod.id}
-                          className="rounded-lg bg-[#324035] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#222529] disabled:opacity-50"
+                          className="rounded-lg bg-[#324035] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#0C6227] disabled:opacity-50"
                         >
+                          {updatingStockId === prod.id && <ButtonSpinner className="mr-1 inline h-3 w-3" />}
                           {updatingStockId === prod.id ? 'Saving...' : 'Update'}
                         </button>
                       </div>
@@ -694,7 +732,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                     <td className="py-3.5 px-3 text-right">
                       <button
                         onClick={() => handleOpenVariantsModal(prod)}
-                        className="rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 text-xs font-semibold"
+                        className="rounded-lg bg-[#f4f6f4] hover:bg-[#e9eeea] text-gray-800 px-3 py-1 text-xs font-semibold"
                       >
                         Manage Variants
                       </button>
@@ -786,7 +824,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   type="file"
                   accept="image/jpeg,image/png,image/gif,image/webp"
                   onChange={(e) => setNewProductImage(e.target.files?.[0] || null)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-[#f4f6f4] file:px-3 file:py-1.5 file:text-xs file:font-semibold"
                 />
               </div>
 
@@ -805,15 +843,17 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#324035] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#222529] transition-all shadow-sm"
+                  disabled={isCreatingProduct}
+                  className="rounded-xl bg-[#324035] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0C6227] transition-all shadow-sm"
                 >
-                  Save & Publish
+                  {isCreatingProduct && <ButtonSpinner className="mr-2 inline h-4 w-4" />}
+                  {isCreatingProduct ? 'Publishing...' : 'Save & Publish'}
                 </button>
               </div>
             </form>
@@ -915,15 +955,16 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setEditingProduct(null)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingEdit}
-                  className="rounded-xl bg-[#324035] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#222529] transition-all shadow-sm"
+                  className="rounded-xl bg-[#324035] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0C6227] transition-all shadow-sm"
                 >
+                  {isSavingEdit && <ButtonSpinner className="mr-2 inline h-4 w-4" />}
                   {isSavingEdit ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
@@ -970,7 +1011,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-xl">
+                <div className="grid grid-cols-2 gap-3 bg-[#f4f6f4] p-3 rounded-xl">
                   <div>
                     <span className="text-gray-500 block text-xs">Inventory Stock</span>
                     <span className="font-bold text-gray-900">{viewingProduct.stockRemaining} units remaining</span>
@@ -992,7 +1033,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 {viewingProduct.description && (
                   <div>
                     <span className="font-bold text-gray-700 block mb-1">Description</span>
-                    <p className="text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p className="text-gray-600 leading-relaxed bg-[#f4f6f4] p-3 rounded-lg border border-gray-100">
                       {viewingProduct.description}
                     </p>
                   </div>
@@ -1005,13 +1046,13 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                       setViewingProduct(null);
                       handleOpenEdit(p);
                     }}
-                    className="rounded-xl bg-[#324035] px-4 py-2 text-xs font-bold text-white hover:bg-[#222529]"
+                    className="rounded-xl bg-[#324035] px-4 py-2 text-xs font-bold text-white hover:bg-[#0C6227]"
                   >
                     Edit This Product
                   </button>
                   <button
                     onClick={() => setViewingProduct(null)}
-                    className="rounded-xl bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200"
+                    className="rounded-xl bg-[#f4f6f4] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea]"
                   >
                     Close
                   </button>
@@ -1050,7 +1091,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddingVariant(!isAddingVariant)}
-                  className="rounded-lg bg-[#324035] text-white px-3 py-1.5 text-xs font-bold hover:bg-[#222529]"
+                  className="rounded-lg bg-[#324035] text-white px-3 py-1.5 text-xs font-bold hover:bg-[#0C6227]"
                 >
                   {isAddingVariant ? 'Cancel Variant' : '+ Add Variant'}
                 </button>
@@ -1058,7 +1099,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
               {/* Add Variant Form */}
               {isAddingVariant && (
-                <form onSubmit={handleCreateVariant} className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+                <form onSubmit={handleCreateVariant} className="bg-[#f4f6f4] p-4 rounded-xl border border-gray-200 space-y-3">
                   <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">New Variant Specification</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1112,9 +1153,11 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   <div className="flex justify-end gap-2 pt-2">
                     <button
                       type="submit"
-                      className="rounded-lg bg-[#324035] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#222529]"
+                      disabled={isCreatingVariant}
+                      className="rounded-lg bg-[#324035] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#0C6227] disabled:opacity-50"
                     >
-                      Save Variant (POST /products/{variantProduct.id}/variants)
+                      {isCreatingVariant && <ButtonSpinner className="mr-2 inline h-3 w-3" />}
+                      {isCreatingVariant ? 'Saving Variant...' : `Save Variant (POST /products/${variantProduct.id}/variants)`}
                     </button>
                   </div>
                 </form>
@@ -1124,13 +1167,13 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               {isLoadingVariants ? (
                 <div className="py-8 text-center text-gray-500 text-xs">Loading variants...</div>
               ) : variants.length === 0 ? (
-                <div className="py-6 text-center text-gray-400 text-xs bg-gray-50 rounded-xl">
+                <div className="py-6 text-center text-gray-400 text-xs bg-[#f4f6f4] rounded-xl">
                   No separate variants defined yet. Standard catalog inventory applies.
                 </div>
               ) : (
                 <div className="overflow-x-auto border border-gray-200 rounded-xl">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-700">
+                    <thead className="bg-[#f4f6f4] border-b border-gray-200 text-gray-700">
                       <tr>
                         <th className="py-2.5 px-3">Variant</th>
                         <th className="py-2.5 px-3">SKU</th>
@@ -1141,7 +1184,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {variants.map((v) => (
-                        <tr key={v.id} className="hover:bg-gray-50/60">
+                        <tr key={v.id} className="hover:bg-[#f4f6f4]/60">
                           <td className="py-2.5 px-3 font-semibold text-gray-900">{v.name}</td>
                           <td className="py-2.5 px-3">
                             <input
@@ -1186,7 +1229,13 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                                 }}
                                 className="w-16 rounded border border-gray-300 px-1.5 py-0.5 text-xs text-gray-900"
                               />
-                              <span className="text-[10px] text-gray-400">units</span>
+                              {updatingVariantStockId === v.id ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-gray-500">
+                                  <ButtonSpinner className="h-3 w-3" /> Saving
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-gray-400">units</span>
+                              )}
                             </div>
                           </td>
                           <td className="py-2.5 px-3 text-right">
@@ -1195,13 +1244,15 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                               disabled={savingVariantId === v.id}
                               className="mr-2 text-emerald-700 hover:text-emerald-800 font-semibold text-xs disabled:opacity-50"
                             >
+                              {savingVariantId === v.id && <ButtonSpinner className="mr-1 inline h-3 w-3" />}
                               {savingVariantId === v.id ? 'Saving...' : 'Save'}
                             </button>
                             <button
                               onClick={() => handleDeleteVariant(v.id)}
-                              className="text-red-600 hover:text-red-700 font-semibold text-xs"
+                              disabled={deletingVariantId === v.id}
+                              className="text-red-600 hover:text-red-700 font-semibold text-xs disabled:opacity-50"
                             >
-                              Delete
+                              {deletingVariantId === v.id ? <ButtonSpinner className="inline h-3 w-3" /> : 'Delete'}
                             </button>
                           </td>
                         </tr>
@@ -1215,7 +1266,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setVariantProduct(null)}
-                className="rounded-xl bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200"
+                className="rounded-xl bg-[#f4f6f4] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea]"
               >
                 Close
               </button>
