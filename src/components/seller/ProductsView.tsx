@@ -451,7 +451,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           className={`px-4 py-2 rounded-xl font-medium text-xs md:text-sm transition-all ${
             activeSubTab === 'all'
               ? 'bg-[#324035] text-white shadow-xs'
-              : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
+              : 'text-gray-600 hover:bg-[#fafbfc] hover:text-black'
           }`}
         >
           All Products ({products.length})
@@ -461,7 +461,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           className={`px-4 py-2 rounded-xl font-medium text-xs md:text-sm transition-all ${
             activeSubTab === 'inventory'
               ? 'bg-[#324035] text-white shadow-xs'
-              : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
+              : 'text-gray-600 hover:bg-[#fafbfc] hover:text-black'
           }`}
         >
           Inventory & Stock Management
@@ -505,7 +505,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by product name or category..."
-            className="w-full bg-[#f4f6f4] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
+            className="w-full bg-[#fafbfc] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 border-0 focus:outline-none focus:ring-0 placeholder-gray-500 transition-all"
           />
         </div>
 
@@ -514,7 +514,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-[#f4f6f4] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+            className="bg-[#fafbfc] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
           >
             {categories.map((cat) => (
               <option key={cat} value={cat}>
@@ -527,7 +527,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-[#f4f6f4] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+            className="bg-[#fafbfc] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
           >
             <option value="All">All Statuses</option>
             <option value="Available">Available</option>
@@ -569,7 +569,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   </tr>
                 ) : (
                   filteredProducts.map((prod) => (
-                    <tr key={prod.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
+                    <tr key={prod.id} className="text-gray-700 hover:bg-[#fafbfc]/70 transition-colors">
                       <td className="py-3.5 px-3">
                         <div className="flex items-center gap-3">
                           <img
@@ -619,7 +619,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                           <button
                             onClick={() => handleOpenDetails(prod)}
                             disabled={loadingDetailsId === prod.id}
-                            className="rounded-lg bg-[#f4f6f4] px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea] transition-colors"
+                            className="rounded-lg bg-[#fafbfc] px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc] transition-colors"
                             title="View product details"
                           >
                             {loadingDetailsId === prod.id ? <ButtonSpinner className="inline h-3 w-3" /> : 'Details'}
@@ -634,7 +634,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                           <button
                             onClick={() => handleOpenVariantsModal(prod)}
                             disabled={loadingVariantsId === prod.id}
-                            className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] transition-colors"
+                            className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc] transition-colors"
                             title="Manage Variants"
                           >
                             {loadingVariantsId === prod.id ? <ButtonSpinner className="inline h-3 w-3" /> : 'Variants'}
@@ -685,7 +685,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredProducts.map((prod) => (
-                  <tr key={prod.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
+                  <tr key={prod.id} className="text-gray-700 hover:bg-[#fafbfc]/70 transition-colors">
                     <td className="py-3.5 px-3 font-semibold text-gray-900">
                       {prod.name}
                     </td>
@@ -732,7 +732,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                     <td className="py-3.5 px-3 text-right">
                       <button
                         onClick={() => handleOpenVariantsModal(prod)}
-                        className="rounded-lg bg-[#f4f6f4] hover:bg-[#e9eeea] text-gray-800 px-3 py-1 text-xs font-semibold"
+                        className="rounded-lg bg-[#fafbfc] hover:bg-[#fafbfc] text-gray-800 px-3 py-1 text-xs font-semibold"
                       >
                         Manage Variants
                       </button>
@@ -824,7 +824,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   type="file"
                   accept="image/jpeg,image/png,image/gif,image/webp"
                   onChange={(e) => setNewProductImage(e.target.files?.[0] || null)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-[#f4f6f4] file:px-3 file:py-1.5 file:text-xs file:font-semibold"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm text-gray-900 file:mr-3 file:rounded-md file:border-0 file:bg-[#fafbfc] file:px-3 file:py-1.5 file:text-xs file:font-semibold"
                 />
               </div>
 
@@ -843,7 +843,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] transition-colors"
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc] transition-colors"
                 >
                   Cancel
                 </button>
@@ -955,7 +955,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setEditingProduct(null)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] transition-colors"
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc] transition-colors"
                 >
                   Cancel
                 </button>
@@ -1011,7 +1011,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 bg-[#f4f6f4] p-3 rounded-xl">
+                <div className="grid grid-cols-2 gap-3 bg-[#fafbfc] p-3 rounded-xl">
                   <div>
                     <span className="text-gray-500 block text-xs">Inventory Stock</span>
                     <span className="font-bold text-gray-900">{viewingProduct.stockRemaining} units remaining</span>
@@ -1033,7 +1033,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 {viewingProduct.description && (
                   <div>
                     <span className="font-bold text-gray-700 block mb-1">Description</span>
-                    <p className="text-gray-600 leading-relaxed bg-[#f4f6f4] p-3 rounded-lg border border-gray-100">
+                    <p className="text-gray-600 leading-relaxed bg-[#fafbfc] p-3 rounded-lg border border-gray-100">
                       {viewingProduct.description}
                     </p>
                   </div>
@@ -1052,7 +1052,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   </button>
                   <button
                     onClick={() => setViewingProduct(null)}
-                    className="rounded-xl bg-[#f4f6f4] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea]"
+                    className="rounded-xl bg-[#fafbfc] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc]"
                   >
                     Close
                   </button>
@@ -1099,7 +1099,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
               {/* Add Variant Form */}
               {isAddingVariant && (
-                <form onSubmit={handleCreateVariant} className="bg-[#f4f6f4] p-4 rounded-xl border border-gray-200 space-y-3">
+                <form onSubmit={handleCreateVariant} className="bg-[#fafbfc] p-4 rounded-xl border border-gray-200 space-y-3">
                   <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">New Variant Specification</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1167,13 +1167,13 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               {isLoadingVariants ? (
                 <div className="py-8 text-center text-gray-500 text-xs">Loading variants...</div>
               ) : variants.length === 0 ? (
-                <div className="py-6 text-center text-gray-400 text-xs bg-[#f4f6f4] rounded-xl">
+                <div className="py-6 text-center text-gray-400 text-xs bg-[#fafbfc] rounded-xl">
                   No separate variants defined yet. Standard catalog inventory applies.
                 </div>
               ) : (
                 <div className="overflow-x-auto border border-gray-200 rounded-xl">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#f4f6f4] border-b border-gray-200 text-gray-700">
+                    <thead className="bg-[#fafbfc] border-b border-gray-200 text-gray-700">
                       <tr>
                         <th className="py-2.5 px-3">Variant</th>
                         <th className="py-2.5 px-3">SKU</th>
@@ -1184,7 +1184,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {variants.map((v) => (
-                        <tr key={v.id} className="hover:bg-[#f4f6f4]/60">
+                        <tr key={v.id} className="hover:bg-[#fafbfc]/60">
                           <td className="py-2.5 px-3 font-semibold text-gray-900">{v.name}</td>
                           <td className="py-2.5 px-3">
                             <input
@@ -1266,7 +1266,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setVariantProduct(null)}
-                className="rounded-xl bg-[#f4f6f4] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea]"
+                className="rounded-xl bg-[#fafbfc] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc]"
               >
                 Close
               </button>

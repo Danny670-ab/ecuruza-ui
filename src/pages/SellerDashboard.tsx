@@ -122,6 +122,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   const [notifications, setNotifications] = useState<SellerNotification[]>([]);
   const [shops, setShops] = useState<Array<{ id: string; name: string; slug?: string; status?: string }>>([]);
   const [selectedShopId, setSelectedShopId] = useState<string | undefined>(sellerProfile.shopId);
+  const [isShopMenuOpen, setIsShopMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
@@ -634,14 +635,14 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] md:pt-3 bg-[#fafbfc] text-[#111827] font-sans antialiased">
+    <div className="flex min-h-screen bg-[#fafbfc] text-[#111827] font-sans antialiased">
 
       {/* Seller Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[#eaedf0] flex flex-col py-6 px-4 transition-transform duration-300 ease-in-out md:top-20 md:bottom-0 md:h-auto md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[#eaedf0] flex flex-col py-6 px-4 transition-transform duration-300 ease-in-out md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
           }`}
       >
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           {/* Header Title / Brand */}
           <div className="flex items-center justify-between px-3 mb-8">
             <div>
@@ -669,7 +670,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                   onClick={() => handleNavClick(item.label)}
                   className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl font-medium text-[15px] transition-colors ${isActive
                     ? 'bg-[#324035] text-white shadow-sm'
-                    : 'text-[#4b5563] hover:bg-[#f4f6f4] hover:text-black'
+                    : 'text-[#4b5563] hover:bg-[#fafbfc] hover:text-black'
                     }`}
                 >
                   <span className={`${isActive ? 'text-white' : 'text-[#4b5563]'}`}>
@@ -690,7 +691,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           </p>
           <button
             onClick={handleUpgradePlan}
-            className="mt-4 w-full rounded-xl bg-[#f4f6f4] py-2.5 text-center text-sm font-bold text-[#111827] transition-all hover:bg-white active:scale-98"
+            className="mt-4 w-full rounded-xl bg-[#fafbfc] py-2.5 text-center text-sm font-bold text-[#111827] transition-all hover:bg-white active:scale-98"
           >
             Upgrade Now
           </button>
@@ -738,7 +739,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search orders, products, customers..."
-                className="w-full bg-[#f4f6f4] text-sm text-gray-800 rounded-lg pl-9 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
+                className="w-full bg-[#fafbfc] text-sm text-gray-800 rounded-lg pl-9 pr-10 py-2 border-0 focus:outline-none focus:ring-0 placeholder-gray-500 transition-all"
               />
             </form>
           </div>
@@ -746,18 +747,55 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
           {/* Seller Profile & Shop Switcher */}
           <div className="flex items-center gap-3">
             {shops.length > 0 && (
-              <div className="hidden md:flex items-center gap-2 rounded-xl border border-gray-200 bg-[#f4f6f4] px-2 py-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">Shop</span>
-                <select
-                  value={selectedShopId || ''}
-                  onChange={(e) => handleShopSelect(e.target.value)}
-                  className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#324035]/30"
-                  aria-label="Select shop"
-                >
-                  {shops.map((shop) => (
-                    <option key={shop.id} value={shop.id}>{shop.name}</option>
-                  ))}
-                </select>
+              <div className="relative hidden md:block">
+                <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-[#fafbfc] px-3 py-2">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500">Shop</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsShopMenuOpen((open) => !open)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') setIsShopMenuOpen(false);
+                    }}
+                    className="flex min-w-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#324035]/30"
+                    aria-label="Select shop"
+                    aria-haspopup="listbox"
+                    aria-expanded={isShopMenuOpen}
+                  >
+                    <span className="max-w-48 truncate">
+                      {shops.find((shop) => shop.id === selectedShopId)?.name || shops[0]?.name}
+                    </span>
+                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M5.22 7.22a.75.75 0 011.06 0L10 10.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 8.28a.75.75 0 010-1.06z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+                {isShopMenuOpen && (
+                  <div
+                    className="absolute right-0 top-full z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+                    role="listbox"
+                    aria-label="Shops"
+                  >
+                    {shops.map((shop) => (
+                      <button
+                        key={shop.id}
+                        type="button"
+                        role="option"
+                        aria-selected={selectedShopId === shop.id}
+                        onClick={() => {
+                          handleShopSelect(shop.id);
+                          setIsShopMenuOpen(false);
+                        }}
+                        className={`w-full rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors ${
+                          selectedShopId === shop.id
+                            ? 'bg-[#324035] text-white'
+                            : 'text-gray-700 hover:bg-[#fafbfc]'
+                        }`}
+                      >
+                        {shop.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -765,7 +803,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-xl text-gray-600 hover:text-black hover:bg-[#f4f6f4] transition-colors focus:outline-none"
+                className="relative p-2 rounded-xl text-gray-600 hover:text-black hover:bg-[#fafbfc] transition-colors focus:outline-none"
                 title="Notifications"
                 aria-label="View notifications"
               >
@@ -782,7 +820,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               {/* Notification Popover Dropdown */}
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-[#f4f6f4]/50">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-[#fafbfc]/50">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-gray-900">Notifications</span>
                       <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
@@ -812,7 +850,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                           key={n.id}
                           onClick={() => void handleMarkAsRead(n.id)}
                           aria-disabled={loadingAction === `notification-${n.id}`}
-                          className={`p-3.5 hover:bg-[#f4f6f4]/80 cursor-pointer transition-colors ${
+                          className={`p-3.5 hover:bg-[#fafbfc]/80 cursor-pointer transition-colors ${
                             !n.isRead ? 'bg-emerald-50/30' : ''
                           } ${loadingAction === `notification-${n.id}` ? 'opacity-60 pointer-events-none' : ''}`}
                         >
@@ -892,7 +930,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
 
               <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {shops.length === 0 ? (
-                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-[#f4f6f4] p-8 text-center text-sm text-gray-500">
+                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-[#fafbfc] p-8 text-center text-sm text-gray-500">
                     No shops yet. Add your first shop to begin selling.
                   </div>
                 ) : (
@@ -911,7 +949,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                             <p className="text-[11px] text-gray-500 mt-1">{shop.slug || 'shop-slug'}</p>
                           </div>
                           <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${
-                            isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-[#f4f6f4] text-gray-600'
+                            isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-[#fafbfc] text-gray-600'
                           }`}>
                             {isActive ? 'Selected' : shop.status || 'Active'}
                           </span>
@@ -921,7 +959,7 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                           <button
                             onClick={() => handleShopSelect(shop.id)}
                             className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold ${
-                              isActive ? 'bg-[#324035] text-white' : 'bg-[#f4f6f4] text-gray-700'
+                              isActive ? 'bg-[#324035] text-white' : 'bg-[#fafbfc] text-gray-700'
                             }`}
                           >
                             {isActive ? 'Current Shop' : 'Select Shop'}

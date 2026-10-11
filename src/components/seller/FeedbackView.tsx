@@ -130,7 +130,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
             {ratingBreakdown.map((row) => (
               <div key={row.star} className="flex items-center gap-3 text-xs">
                 <span className="w-12 font-medium text-gray-700">{row.star} Stars</span>
-                <div className="flex-1 bg-[#f4f6f4] rounded-full h-2.5 overflow-hidden">
+                <div className="flex-1 bg-[#fafbfc] rounded-full h-2.5 overflow-hidden">
                   <div
                     style={{ width: `${row.pct}%` }}
                     className="h-full bg-[#324035] rounded-full transition-all duration-500"
@@ -150,7 +150,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
           className={`px-4 py-2 rounded-xl font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
             selectedRating === 'All'
               ? 'bg-[#324035] text-white shadow-xs'
-              : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
+              : 'text-gray-600 hover:bg-[#fafbfc] hover:text-black'
           }`}
         >
           All Reviews ({reviewList.length})
@@ -165,13 +165,13 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-[#324035] text-white shadow-xs'
-                  : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
+                  : 'text-gray-600 hover:bg-[#fafbfc] hover:text-black'
               }`}
             >
               <span>{rating} ★</span>
               <span
                 className={`text-[11px] px-1.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-[#e9eeea] text-gray-700'
+                  isActive ? 'bg-white/20 text-white' : 'bg-[#fafbfc] text-gray-700'
                 }`}
               >
                 {count}
@@ -227,7 +227,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
               </div>
 
               {/* Comment Content */}
-              <p className="text-sm text-gray-700 leading-relaxed bg-[#f4f6f4]/60 p-3 rounded-lg border border-gray-100">
+              <p className="text-sm text-gray-700 leading-relaxed bg-[#fafbfc]/60 p-3 rounded-lg border border-gray-100">
                 "{rev.comment}"
               </p>
 
@@ -257,7 +257,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({
                         <div className="flex items-center gap-2 justify-end">
                           <button
                             onClick={() => setActiveReplyId(null)}
-                            className="rounded-lg px-3 py-1.5 text-xs text-gray-600 hover:bg-[#f4f6f4]"
+                            className="rounded-lg px-3 py-1.5 text-xs text-gray-600 hover:bg-[#fafbfc]"
                           >
                             Cancel
                           </button>

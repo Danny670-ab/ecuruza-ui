@@ -47,7 +47,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           <button
             onClick={onRefreshData}
             disabled={isLoading}
-            className="self-start sm:self-auto flex items-center gap-2 rounded-xl bg-white border border-gray-300 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-[#f4f6f4] hover:text-black transition-all shadow-xs"
+            className="self-start sm:self-auto flex items-center gap-2 rounded-xl bg-white border border-gray-300 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc] hover:text-black transition-all shadow-xs"
             title="Refresh dashboard data"
           >
             <svg
@@ -135,7 +135,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                     {item.orderHeight !== undefined && (
                       <div
                         style={{ height: `${item.orderHeight}%` }}
-                        className="w-2.5 md:w-3 bg-[#f4f6f4] rounded-full transition-all duration-500"
+                        className="w-2.5 md:w-3 bg-[#fafbfc] rounded-full transition-all duration-500"
                         title={`Orders: ${item.orderCount ? `${item.orderCount} orders` : `${item.orderHeight}%`}`}
                       />
                     )}
@@ -155,7 +155,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             <h3 className="text-base font-bold text-black">Top Selling Product</h3>
             <button
               onClick={() => onNavigateToTab('Products')}
-              className="rounded-lg bg-[#f4f6f4] px-2.5 py-1 text-xs font-medium text-gray-800 hover:bg-[#e9eeea] transition-colors"
+              className="rounded-lg bg-[#fafbfc] px-2.5 py-1 text-xs font-medium text-gray-800 hover:bg-[#fafbfc] transition-colors"
             >
               See all product
             </button>
@@ -217,7 +217,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </thead>
             <tbody className="divide-y divide-gray-200">
               {lastOrders.map((order) => (
-                <tr key={order.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
+                <tr key={order.id} className="text-gray-700 hover:bg-[#fafbfc]/70 transition-colors">
                   <td className="py-3.5 px-3 font-medium text-black">{order.code}</td>
                   <td className="py-3.5 px-3 font-medium text-black">{order.product}</td>
                   <td className="py-3.5 px-3 text-gray-600">{order.orderDate}</td>

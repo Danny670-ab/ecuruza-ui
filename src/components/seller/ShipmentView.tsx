@@ -106,7 +106,7 @@ export const ShipmentView: React.FC<ShipmentViewProps> = ({ shipments: propShipm
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search tracking #, order code, or city..."
-            className="w-full bg-[#f4f6f4] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
+            className="w-full bg-[#fafbfc] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 border-0 focus:outline-none focus:ring-0 placeholder-gray-500 transition-all"
           />
         </div>
 
@@ -114,7 +114,7 @@ export const ShipmentView: React.FC<ShipmentViewProps> = ({ shipments: propShipm
           <select
             value={selectedCarrier}
             onChange={(e) => setSelectedCarrier(e.target.value)}
-            className="bg-[#f4f6f4] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+            className="bg-[#fafbfc] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
           >
             {carriers.map((car) => (
               <option key={car} value={car}>
@@ -149,7 +149,7 @@ export const ShipmentView: React.FC<ShipmentViewProps> = ({ shipments: propShipm
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredShipments.map((ship) => (
-                <tr key={ship.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
+                <tr key={ship.id} className="text-gray-700 hover:bg-[#fafbfc]/70 transition-colors">
                   <td className="py-3.5 px-3 font-mono font-bold text-gray-900">{ship.trackingNumber}</td>
                   <td className="py-3.5 px-3 font-semibold text-black">{ship.orderId}</td>
                   <td className="py-3.5 px-3">
@@ -210,7 +210,7 @@ export const ShipmentView: React.FC<ShipmentViewProps> = ({ shipments: propShipm
             </div>
 
             <div className="mt-4 space-y-4">
-              <div className="bg-[#f4f6f4] p-3 rounded-xl text-xs space-y-1">
+              <div className="bg-[#fafbfc] p-3 rounded-xl text-xs space-y-1">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Order ID:</span>
                   <span className="font-bold text-gray-900">{activeTrackingShipment.orderId}</span>
@@ -244,7 +244,7 @@ export const ShipmentView: React.FC<ShipmentViewProps> = ({ shipments: propShipm
                       className={`absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full ${
                         activeTrackingShipment.status === 'Delivered'
                           ? 'bg-[#324035]'
-                          : 'bg-gray-300'
+                          : 'bg-[#fafbfc]'
                       }`}
                     />
                     <span className="text-xs font-bold text-gray-900 block">
@@ -268,7 +268,7 @@ export const ShipmentView: React.FC<ShipmentViewProps> = ({ shipments: propShipm
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         activeTrackingShipment.status === st
                           ? 'bg-[#324035] text-white shadow-xs'
-                          : 'bg-[#f4f6f4] text-gray-700 hover:bg-[#e9eeea]'
+                          : 'bg-[#fafbfc] text-gray-700 hover:bg-[#fafbfc]'
                       }`}
                     >
                       {st}
@@ -281,7 +281,7 @@ export const ShipmentView: React.FC<ShipmentViewProps> = ({ shipments: propShipm
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setActiveTrackingShipment(null)}
-                className="rounded-xl bg-[#f4f6f4] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea] transition-colors"
+                className="rounded-xl bg-[#fafbfc] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc] transition-colors"
               >
                 Close
               </button>

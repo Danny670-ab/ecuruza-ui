@@ -98,13 +98,13 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-[#324035] text-white shadow-xs'
-                  : 'text-gray-600 hover:bg-[#f4f6f4] hover:text-black'
+                  : 'text-gray-600 hover:bg-[#fafbfc] hover:text-black'
               }`}
             >
               <span>{tab.label}</span>
               <span
                 className={`text-[11px] px-1.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-[#e9eeea] text-gray-700'
+                  isActive ? 'bg-white/20 text-white' : 'bg-[#fafbfc] text-gray-700'
                 }`}
               >
                 {tab.count}
@@ -127,7 +127,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by order ID, product, or customer..."
-            className="w-full bg-[#f4f6f4] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#324035]/40 placeholder-gray-500 transition-all"
+            className="w-full bg-[#fafbfc] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 border-0 focus:outline-none focus:ring-0 placeholder-gray-500 transition-all"
           />
         </div>
       </div>
@@ -157,7 +157,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
                 </tr>
               ) : (
                 filteredOrders.map((order) => (
-                  <tr key={order.id} className="text-gray-700 hover:bg-[#f4f6f4]/70 transition-colors">
+                  <tr key={order.id} className="text-gray-700 hover:bg-[#fafbfc]/70 transition-colors">
                     <td className="py-3.5 px-3 font-semibold text-black">{order.code}</td>
                     <td className="py-3.5 px-3">
                       <span className="font-semibold text-gray-900 block leading-tight">
@@ -218,7 +218,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
             </div>
 
             <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3 bg-[#f4f6f4] p-3 rounded-xl text-xs">
+              <div className="grid grid-cols-2 gap-3 bg-[#fafbfc] p-3 rounded-xl text-xs">
                 <div>
                   <span className="text-gray-500 block">Customer</span>
                   <span className="font-bold text-gray-900">{selectedOrder.customerName}</span>
@@ -233,7 +233,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
 
               <div>
                 <span className="text-xs font-bold text-gray-700 block mb-1">Shipping Address</span>
-                <p className="text-xs text-gray-600 bg-[#f4f6f4] p-2.5 rounded-lg border border-gray-100">
+                <p className="text-xs text-gray-600 bg-[#fafbfc] p-2.5 rounded-lg border border-gray-100">
                   {selectedOrder.shippingAddress || 'KG 14 Ave, Nyarugenge, Kigali, Rwanda'}
                 </p>
               </div>
@@ -261,7 +261,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         selectedOrder.status === st
                           ? 'bg-[#324035] text-white shadow-xs'
-                          : 'bg-[#f4f6f4] text-gray-700 hover:bg-[#e9eeea]'
+                          : 'bg-[#fafbfc] text-gray-700 hover:bg-[#fafbfc]'
                       }`}
                     >
                       {updatingOrderStatus?.orderId === selectedOrder.id && updatingOrderStatus.status === st
@@ -276,7 +276,7 @@ export const OrderView: React.FC<OrderViewProps> = ({ orders: propOrders, onUpda
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="rounded-xl bg-[#f4f6f4] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#e9eeea] transition-colors"
+                className="rounded-xl bg-[#fafbfc] px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-[#fafbfc] transition-colors"
               >
                 Close
               </button>
