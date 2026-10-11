@@ -71,7 +71,7 @@ function AppContent() {
         newestOnTop={false}
         closeOnClick
         pauseOnHover
-        theme="colored"
+        theme="light"
       />
     </>
   );

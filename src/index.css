@@ -10,6 +10,14 @@
   color: #fff;
 }
 
+.Toastify__toast .Toastify__progress-bar--success {
+  background: #3d6048;
+}
+
+.Toastify__toast .Toastify__progress-bar--error {
+  background: #dc2626;
+}
+
 /* Custom scrollbar - thin version */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */
