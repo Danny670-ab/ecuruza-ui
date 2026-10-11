@@ -11,98 +11,108 @@ const Login: React.FC = () => {
   const [remember, setRemember] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const navigate = useNavigate()
 
+  const navigate = useNavigate()
 
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
-    // If already logged in as a seller, redirect directly to seller dashboard
-    try {
-      const savedToken = localStorage.getItem('token')
-      const savedUserStr = localStorage.getItem('user')
-      if (savedToken) {
-        const parsedUser = savedUserStr ? JSON.parse(savedUserStr) : null
-        const isSellerUser =
-          String(parsedUser?.role || '').toUpperCase() === 'SELLER' ||
-          Boolean(parsedUser?.isSeller)
-        if (isSellerUser) {
-          navigate('/seller-dashboard', { replace: true })
-        }
-      }
-    } catch {
-      // ignore
-    }
-
     return () => {
       document.body.style.overflow = prev
     }
-  }, [navigate])
+  }, [])
 
   const isRoleSeller = (roleStr?: unknown): boolean => {
     if (!roleStr || typeof roleStr !== 'string') return false
+
     const normalized = roleStr.trim().toUpperCase()
-    return normalized === 'SELLER' || normalized === 'VENDOR' || normalized === 'MERCHANT'
+
+    return (
+      normalized === 'SELLER' ||
+      normalized === 'VENDOR' ||
+      normalized === 'MERCHANT'
+    )
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
+
     try {
       const backendUrl = (
-        (import.meta.env.VITE_REACT_BACKEND_URL as string) || 'https://ecuruza-api-e33e.onrender.com/api/v1'
+        (import.meta.env.VITE_REACT_BACKEND_URL as string) ||
+        'https://ecuruza-api-e33e.onrender.com/api/v1'
       ).replace(/\/+$/, '')
 
       const { data: resp } = await axios.post(
         `${backendUrl}/auth/login`,
-        { email, password }
+        {
+          email: email.trim(),
+          password,
+        }
       )
-      const token = resp?.token ?? resp?.accessToken ?? resp?.data?.token ?? resp?.data?.accessToken ?? null
-      let user = resp?.user ?? resp?.data?.user ?? null
 
-      if (token) {
-        setAuthToken(token, true)
+      const token =
+        resp?.token ??
+        resp?.accessToken ??
+        resp?.data?.token ??
+        resp?.data?.accessToken ??
+        null
+
+      let user =
+        resp?.user ??
+        resp?.data?.user ??
+        resp?.data?.profile ??
+        null
+
+      if (!token) {
+        throw new Error('Authentication token was not returned by the server.')
       }
 
-      // Check whether user is a seller:
-      // 1. Direct role check from login response
-      let isSeller = false
-      if (
+      setAuthToken(token, remember)
+
+      let isSeller =
         isRoleSeller(user?.role) ||
         isRoleSeller(resp?.role) ||
         isRoleSeller(resp?.data?.role) ||
         Boolean(user?.isSeller) ||
         Boolean(resp?.isSeller) ||
         Boolean(resp?.data?.isSeller) ||
-        (Array.isArray(user?.roles) && user.roles.some(isRoleSeller)) ||
+        (Array.isArray(user?.roles) &&
+          user.roles.some((role: unknown) => isRoleSeller(role))) ||
         Boolean(user?.businessName || user?.seller || user?.shop)
-      ) {
-        isSeller = true
+
+      const authHeaders = {
+        Authorization: `Bearer ${token}`,
       }
 
       let sellerProfileData: Record<string, unknown> | null = null
-      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
 
-      // 2. If not confirmed yet, verify using the seller APIs (/sellers/me, /shop/my-shop, /sellers/dashboard, /auth/profile)
-      if (!isSeller && token) {
-        // Probe /sellers/me
+      if (!isSeller) {
         try {
           const sellerRes = await axios.get(`${backendUrl}/sellers/me`, {
             headers: authHeaders,
             timeout: 5000,
           })
+
           const sData = sellerRes.data?.data || sellerRes.data
+
           if (sellerRes.status === 200 && sData && !sData.error) {
             isSeller = true
+
             const sellerObj = sData.seller || sData
             const userObj = sellerObj?.user || sData?.user || user
+
             const name =
-              [userObj?.firstName, userObj?.lastName].filter(Boolean).join(' ') ||
+              [userObj?.firstName, userObj?.lastName]
+                .filter(Boolean)
+                .join(' ') ||
               userObj?.name ||
               sellerObj?.businessName ||
               'Seller'
+
             sellerProfileData = {
               name,
               email: userObj?.email || user?.email || email,
@@ -111,98 +121,89 @@ const Login: React.FC = () => {
                 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
               storeName:
                 sellerObj?.businessName ||
-                (sellerObj?.shops && sellerObj.shops[0]?.name) ||
+                sellerObj?.shops?.[0]?.name ||
                 `${name}'s Store`,
               isVerified:
                 sellerObj?.verificationStatus === 'VERIFIED' ||
-                Boolean(sellerObj?.isVerified ?? true),
+                Boolean(sellerObj?.isVerified ?? false),
             }
           }
         } catch {
-          // not found or not a seller
+          isSeller = false
         }
+      }
 
-        // Probe /sellers/dashboard
-        if (!isSeller) {
-          try {
-            const dashRes = await axios.get(`${backendUrl}/sellers/dashboard`, {
-              headers: authHeaders,
-              timeout: 5000,
-            })
-            if (dashRes.status === 200 && dashRes.data && !dashRes.data.error) {
-              isSeller = true
-            }
-          } catch {
-            // ignore
+      if (!isSeller) {
+        try {
+          const profileRes = await axios.get(`${backendUrl}/auth/profile`, {
+            headers: authHeaders,
+            timeout: 5000,
+          })
+
+          const profile =
+            profileRes.data?.data ||
+            profileRes.data?.user ||
+            profileRes.data
+
+          if (
+            isRoleSeller(profile?.role) ||
+            profile?.isSeller === true ||
+            Boolean(profile?.businessName)
+          ) {
+            isSeller = true
+            user = { ...(user || {}), ...profile }
           }
-        }
-
-        // Probe /sellers/applications/me
-        if (!isSeller) {
+        } catch {
           try {
-            const appRes = await axios.get(`${backendUrl}/sellers/applications/me`, {
-              headers: authHeaders,
-              timeout: 5000,
-            })
-            if (appRes.status === 200 && appRes.data && !appRes.data.error) {
-              isSeller = true
-            }
-          } catch {
-            // ignore
-          }
-        }
-
-        // Probe /auth/profile or /users/me/profile
-        if (!isSeller) {
-          try {
-            const profRes = await axios.get(`${backendUrl}/auth/profile`, {
-              headers: authHeaders,
-              timeout: 5000,
-            })
-            const pData = profRes.data?.data || profRes.data?.user || profRes.data
-            if (pData) {
-              if (isRoleSeller(pData.role) || pData.isSeller || pData.businessName) {
-                isSeller = true
-                user = { ...user, ...pData }
-              }
-            }
-          } catch {
-            try {
-              const profRes2 = await axios.get(`${backendUrl}/users/me/profile`, {
+            const profileRes = await axios.get(
+              `${backendUrl}/users/me/profile`,
+              {
                 headers: authHeaders,
                 timeout: 5000,
-              })
-              const pData2 = profRes2.data?.data || profRes2.data?.user || profRes2.data
-              if (pData2) {
-                if (isRoleSeller(pData2.role) || pData2.isSeller || pData2.businessName) {
-                  isSeller = true
-                  user = { ...user, ...pData2 }
-                }
               }
-            } catch {
-              // ignore
+            )
+
+            const profile =
+              profileRes.data?.data ||
+              profileRes.data?.user ||
+              profileRes.data
+
+            if (
+              isRoleSeller(profile?.role) ||
+              profile?.isSeller === true ||
+              Boolean(profile?.businessName)
+            ) {
+              isSeller = true
+              user = { ...(user || {}), ...profile }
             }
+          } catch {
+            isSeller = false
           }
         }
       }
 
-      // If user is confirmed as seller, fetch/prepare seller profile cache for dashboard
-      if (isSeller && !sellerProfileData && token) {
+      if (isSeller && !sellerProfileData) {
         try {
           const sellerRes = await axios.get(`${backendUrl}/sellers/me`, {
             headers: authHeaders,
             timeout: 4000,
           })
+
           const sData = sellerRes.data?.data || sellerRes.data
+
           if (sData) {
             const sellerObj = sData.seller || sData
             const userObj = sellerObj?.user || sData?.user || user
+
             const name =
-              [userObj?.firstName, userObj?.lastName].filter(Boolean).join(' ') ||
+              [userObj?.firstName, userObj?.lastName]
+                .filter(Boolean)
+                .join(' ') ||
               userObj?.name ||
               sellerObj?.businessName ||
               user?.fullName ||
               'Seller'
+
             sellerProfileData = {
               name,
               email: userObj?.email || user?.email || email,
@@ -211,19 +212,22 @@ const Login: React.FC = () => {
                 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
               storeName:
                 sellerObj?.businessName ||
-                (sellerObj?.shops && sellerObj.shops[0]?.name) ||
+                sellerObj?.shops?.[0]?.name ||
                 `${name}'s Store`,
               isVerified:
                 sellerObj?.verificationStatus === 'VERIFIED' ||
-                Boolean(sellerObj?.isVerified ?? true),
+                Boolean(sellerObj?.isVerified ?? false),
             }
           }
         } catch {
           const name =
-            [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
+            [user?.firstName, user?.lastName]
+              .filter(Boolean)
+              .join(' ') ||
             user?.name ||
             user?.fullName ||
             'Seller'
+
           sellerProfileData = {
             name,
             email: user?.email || email,
@@ -231,35 +235,46 @@ const Login: React.FC = () => {
               user?.avatar ||
               'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
             storeName: user?.businessName || `${name}'s Store`,
-            isVerified: true,
+            isVerified: false,
           }
         }
       }
 
-      if (user || isSeller) {
-        try {
-          const updatedUser = { ...(user || {}), role: isSeller ? 'SELLER' : (user?.role || 'CUSTOMER') }
-          localStorage.setItem('user', JSON.stringify(updatedUser))
-        } catch {
-          // ignore
-        }
+      const updatedUser = {
+        ...(user || {}),
+        email: user?.email || email.trim(),
+        role: isSeller ? 'SELLER' : user?.role || 'CUSTOMER',
       }
 
-      // Redirect accordingly:
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+
+      if (sellerProfileData) {
+        localStorage.setItem(
+          'sellerProfile',
+          JSON.stringify(sellerProfileData)
+        )
+      }
+
+      toast.success('Login successful!')
+
       if (isSeller) {
-        toast.success('Login successful! Welcome to your Seller Dashboard.')
-        navigate('/seller-dashboard')
+        navigate('/seller-dashboard', { replace: true })
       } else {
-        toast.success('Login successful')
-        navigate('/')
+        navigate('/', { replace: true })
       }
     } catch (error: unknown) {
       let msg = 'Login failed'
+
       if (axios.isAxiosError(error)) {
-        msg = error.response?.data?.message || error.message || msg
+        msg =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          msg
       } else if (error instanceof Error) {
         msg = error.message
       }
+
       console.error('login error', error)
       setError(msg)
       toast.error(msg)
@@ -271,20 +286,38 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full h-125 max-w-md bg-[#F2EEEE] border border-gray-200 rounded-2xl shadow-xl p-5">
-        <h1 className="text-2xl mt-10 font-bold text-[#0C6227] text-center">Welcome Back!</h1>
-        <p className="text-sm text-black text-center mt-2">Please login to your account</p>
+        <h1 className="text-2xl mt-10 font-bold text-[#0C6227] text-center">
+          Welcome Back!
+        </h1>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-3  items-center justify-center" >
+        <p className="text-sm text-black text-center mt-2">
+          Please login to your account
+        </p>
+
+        <form
+          onSubmit={handleSubmit}
+          className="mt-8 space-y-3  items-center justify-center"
+        >
           {error && (
             <div className="text-center mb-2">
               <p className="text-xs text-red-600">{error}</p>
             </div>
           )}
 
-          <label className="flex relative items-center justify-center ">
+          <label className="flex relative items-center justify-center">
             <span className="absolute left-14 top-1/2 -translate-y-1/2 text-gray-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 8.5v7A2.5 2.5 0 0 0 5.5 18h13A2.5 2.5 0 0 0 21 15.5v-7M3 8.5l9 6 9-6" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 8.5v7A2.5 2.5 0 0 0 5.5 18h13A2.5 2.5 0 0 0 21 15.5v-7M3 8.5l9 6 9-6"
+                />
               </svg>
             </span>
 
@@ -298,11 +331,31 @@ const Login: React.FC = () => {
             />
           </label>
 
-          <label className="flex relative items-center justify-center ">
+          <label className="flex relative items-center justify-center">
             <span className="absolute left-14 top-1/2 -translate-y-1/2 text-gray-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M12 15v2M6 10V8a6 6 0 0 1 12 0v2" />
-                <rect x="4" y="10" width="16" height="10" rx="2" ry="2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 15v2M6 10V8a6 6 0 0 1 12 0v2"
+                />
+                <rect
+                  x="4"
+                  y="10"
+                  width="16"
+                  height="10"
+                  rx="2"
+                  ry="2"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </span>
 
@@ -311,7 +364,7 @@ const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className=" w-79  pl-10 pr-10 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
+              className="w-79 pl-10 pr-10 py-2 rounded-md bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 text-sm"
               aria-label="Password"
             />
 
@@ -322,13 +375,40 @@ const Login: React.FC = () => {
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.58 10.58A3 3 0 0 1 13.42 13.42" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 3l18 18M10.58 10.58A3 3 0 0 1 13.42 13.42"
+                  />
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M2.05 12.55C3.9 7.05 8.7 4 12 4c3.3 0 8.1 3.05 9.95 8.55A11.98 11.98 0 0 1 12 20c-3.3 0-8.1-3.05-9.95-7.45z" />
-                  <circle cx="12" cy="12" r="3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M2.05 12.55C3.9 7.05 8.7 4 12 4c3.3 0 8.1 3.05 9.95 8.55A11.98 11.98 0 0 1 12 20c-3.3 0-8.1-3.05-9.95-7.45z"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               )}
             </button>
@@ -340,20 +420,41 @@ const Login: React.FC = () => {
               onClick={() => setRemember((r) => !r)}
               className="inline-flex items-center gap-2 text-gray-700"
             >
-              <span className={`w-5 h-5 rounded-sm ml-11 flex items-center justify-center ${remember ? 'bg-emerald-700' : 'bg-white border border-gray-300'}`}>
+              <span
+                className={`w-5 h-5 rounded-sm ml-11 flex items-center justify-center ${
+                  remember
+                    ? 'bg-emerald-700'
+                    : 'bg-white border border-gray-300'
+                }`}
+              >
                 {remember ? (
-                  <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M20 6L9 17l-5-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <svg
+                    className="w-3 h-3 text-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      d="M20 6L9 17l-5-5"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 ) : null}
               </span>
               <span>Remember me</span>
             </button>
 
-            <Link to="/forgot" className="text-emerald-700 mr-14 hover:underline">Forgot password?</Link>
+            <Link
+              to="/forgot"
+              className="text-emerald-700 mr-14 hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
 
-          <div className='items-center justify-center flex'>
+          <div className="items-center justify-center flex">
             <button
               type="submit"
               className="mt-2 w-79 bg-[#3F4E40] text-white py-2 rounded-full text-base font-medium shadow"
@@ -369,17 +470,34 @@ const Login: React.FC = () => {
             <span className="flex-1 h-px bg-gray-200" />
           </div>
 
-          <div className='flex items-center justify-center'>
+          <div className="flex items-center justify-center">
             <button
               type="button"
               className="w-79 bg-white text-black py-2 rounded-md text-sm font-medium shadow flex items-center justify-center gap-3"
               onClick={() => console.log('Google login')}
             >
-              <svg className="w-5 h-5" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path fill="#4285F4" d="M533.5 278.4c0-18.5-1.7-37.1-5.3-54.9H272v104h146.9c-6.3 34.1-25.1 62.9-53.8 82.2v68.3h87c51.2-47.1 81.4-116.7 81.4-199.5z"/>
-                <path fill="#34A853" d="M272 544.3c72.6 0 133.6-24.2 178.1-65.9l-86.9-68.3c-24.1 16.2-55 25.7-91.2 25.7-70 0-129.3-47.2-150.6-110.6h-89.6v69.6C84.8 478.9 170 544.3 272 544.3z"/>
-                <path fill="#FBBC05" d="M121.4 327.2c-10.6-31.8-10.6-66.1 0-97.9V159.7h-89.6C9.6 211.6 0 239.3 0 272c0 32.7 9.6 60.4 31.8 112.3l89.6-57.1z"/>
-                <path fill="#EA4335" d="M272 109.7c38.7-.6 75 13.4 102.9 38.7l77.1-77.1C405.4 25.8 344.4 0 272 0 170 0 84.8 65.4 31.8 159.7l89.6 69.6C142.7 157 202 109.7 272 109.7z"/>
+              <svg
+                className="w-5 h-5"
+                viewBox="0 0 533.5 544.3"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  fill="#4285F4"
+                  d="M533.5 278.4c0-18.5-1.7-37.1-5.3-54.9H272v104h146.9c-6.3 34.1-25.1 62.9-53.8 82.2v68.3h87c51.2-47.1 81.4-116.7 81.4-199.5z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M272 544.3c72.6 0 133.6-24.2 178.1-65.9l-86.9-68.3c-24.1 16.2-55 25.7-91.2 25.7-70 0-129.3-47.2-150.6-110.6h-89.6v69.6C84.8 478.9 170 544.3 272 544.3z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M121.4 327.2c-10.6-31.8-10.6-66.1 0-97.9V159.7h-89.6C9.6 211.6 0 239.3 0 272c0 32.7 9.6 60.4 31.8 112.3l89.6-57.1z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M272 109.7c38.7-.6 75 13.4 102.9 38.7l77.1-77.1C405.4 25.8 344.4 0 272 0 170 0 84.8 65.4 31.8 159.7l89.6 69.6C142.7 157 202 109.7 272 109.7z"
+                />
               </svg>
               <span>Login With Google</span>
             </button>
@@ -390,7 +508,10 @@ const Login: React.FC = () => {
 
         <p className="text-center text-sm text-black">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-emerald-700 font-medium hover:underline">
+          <Link
+            to="/signup"
+            className="text-emerald-700 font-medium hover:underline"
+          >
             Sign Up
           </Link>
         </p>

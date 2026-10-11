@@ -644,10 +644,13 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
       >
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           {/* Header Title / Brand */}
-          <div className="flex items-center justify-between px-3 mb-8">
+          <div className="flex items-center justify-between px-3 mb-8 pb-5 border-b border-[#eef1f3]">
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-black">Seller Dashboard</h1>
-              <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block mt-0.5">
+              <h1 className="text-[27px] font-extrabold leading-[1.08] tracking-[-0.04em] text-[#111827]">
+                <span className="block">Seller</span>
+                <span className="block">Dashboard</span>
+              </h1>
+              <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-[0.12em] block mt-2">
                 Merchant Portal
               </span>
             </div>

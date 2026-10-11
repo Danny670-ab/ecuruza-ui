@@ -18,7 +18,7 @@ import SignUp from './components/Authantications/SignUp';
 import SellerRegistration from './components/Authantications/SellerRegistration';
 import ResendEmail from './components/Authantications/ResendEmail';
 import SellerDashboard from './pages/SellerDashboard';
-import ProtectedSellerRoute from './components/ProtectedSellerRoute';
+import { ProtectedSellerRoute } from './components/Authantications/ProtectedSellerRoute';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
