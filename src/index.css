@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+.seller-dashboard button[class*="hover:"]:not(:disabled):not([class*="text-red-"]):not([class*="text-rose-"]):hover {
+  background-color: #3d6048;
+  border-color: #3d6048;
+  color: #fff;
+}
+
+.seller-dashboard button[class*="hover:"]:not(:disabled):not([class*="text-red-"]):not([class*="text-rose-"]):hover * {
+  color: #fff;
+}
+
+.Toastify__toast .Toastify__progress-bar--success {
+  background: #3d6048;
+}
+
+.Toastify__toast .Toastify__progress-bar--error {
+  background: #dc2626;
+}
+
 /* Custom scrollbar - thin version */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */
@@ -139,4 +157,3 @@
   mask-composite: exclude;
   animation: rotate-border 1.5s linear infinite;
 }
-

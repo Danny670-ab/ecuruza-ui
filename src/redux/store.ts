@@ -10,8 +10,13 @@ import type { TypedUseSelectorHook } from 'react-redux';
  * of slice reducers: createAppStore({ user: userReducer, product: productReducer })
  */
 export function createAppStore<S extends ReducersMapObject = ReducersMapObject>(reducers: S = {} as S) {
-		const rootReducer = combineReducers(reducers as unknown as ReducersMapObject);
+	const validReducers = Object.keys(reducers).length > 0
+		? reducers
+		: {
+			__fallback: (state = {}) => state,
+		} as ReducersMapObject;
 
+	const rootReducer = combineReducers(validReducers as ReducersMapObject);
 	const store = configureStore({ reducer: rootReducer });
 
 	return store;
