@@ -403,9 +403,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="self-start sm:self-auto flex items-center gap-2 rounded-xl bg-[#324035] px-5 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-all shadow-sm active:scale-98"
+          className="inline-flex h-11 w-44 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#324035] px-4 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-colors shadow-sm disabled:cursor-wait"
         >
-          {saving && <ButtonSpinner />}
+          {saving && <ButtonSpinner className="h-4 w-4 shrink-0" />}
           {saving ? 'Saving...' : 'Save All Changes'}
         </button>
       </div>
@@ -479,9 +479,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
                       Logo
                     </div>
                   )}
-                  <div className="bg-[#0C6227]/90 backdrop-blur-xs text-white px-3 py-1 rounded-lg">
+                  <div className="rounded-lg border border-white/80 bg-white/95 px-3 py-1 text-gray-900 shadow-sm backdrop-blur-xs">
                     <span className="font-bold text-sm block leading-tight">{settings.storeName}</span>
-                    <span className="text-[11px] text-gray-300">ecuruza.rw/store/{settings.slug}</span>
+                    <span className="text-[11px] text-gray-600">ecuruza.rw/store/{settings.slug}</span>
                   </div>
                 </div>
               </div>
@@ -1022,9 +1022,9 @@ export const StoreSettingView: React.FC<StoreSettingViewProps> = ({
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-[#324035] px-6 py-2.5 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-all shadow-sm"
+            className="inline-flex h-11 w-44 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#324035] px-4 text-xs md:text-sm font-bold text-white hover:bg-[#0C6227] transition-colors shadow-sm disabled:cursor-wait"
           >
-            {saving && <ButtonSpinner />}
+            {saving && <ButtonSpinner className="h-4 w-4 shrink-0" />}
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </div>
