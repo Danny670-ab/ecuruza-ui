@@ -484,28 +484,30 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white rounded-xl border border-gray-300/80 p-4 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#e7ebe8] bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full flex-1 md:max-w-md">
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#7b847e]">
+            <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </span>
           <input
             type="text"
+            aria-label="Search products by name or category"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by product name or category..."
-            className="w-full bg-[#fafbfc] text-xs md:text-sm text-gray-800 rounded-lg pl-9 pr-4 py-2 border-0 focus:outline-none focus:ring-0 placeholder-gray-500 transition-all"
+            className="w-full rounded-xl border border-[#e4e9e5] bg-[#fbfcfb] py-2.5 pl-10 pr-4 text-sm text-[#252b27] placeholder:text-[#8a928c] transition duration-150 focus:border-[#42634b] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#42634b]/10"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {/* Category Dropdown */}
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-[#fafbfc] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+            aria-label="Filter products by category"
+            className="w-full cursor-pointer rounded-xl border border-[#e4e9e5] bg-white px-3.5 py-2.5 text-sm font-medium text-[#38413b] transition duration-150 hover:border-[#cbd5ce] focus:border-[#42634b] focus:outline-none focus:ring-4 focus:ring-[#42634b]/10 sm:w-auto"
           >
             {categories.map((cat) => (
               <option key={cat} value={cat}>
@@ -518,7 +520,8 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-[#fafbfc] text-xs font-semibold text-gray-700 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#324035]/40"
+            aria-label="Filter products by status"
+            className="w-full cursor-pointer rounded-xl border border-[#e4e9e5] bg-white px-3.5 py-2.5 text-sm font-medium text-[#38413b] transition duration-150 hover:border-[#cbd5ce] focus:border-[#42634b] focus:outline-none focus:ring-4 focus:ring-[#42634b]/10 sm:w-auto"
           >
             <option value="All">All Statuses</option>
             <option value="Available">Available</option>

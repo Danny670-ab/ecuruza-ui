@@ -32,6 +32,7 @@ import {
   createShopApi,
 } from '../redux/services/sellerService';
 import { setAuthToken } from '../redux/axiosConfig';
+import sellerBrandMark from '../assets/logo.png';
 
 // Subcomponents for the dashboard pages
 import { OverviewView } from '../components/seller/OverviewView';
@@ -642,17 +643,19 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[#eaedf0] flex flex-col py-6 px-4 transition-transform duration-300 ease-in-out md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
           }`}
       >
-        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
-          {/* Header Title / Brand */}
-          <div className="flex items-center justify-between px-3 mb-8 pb-5 border-b border-[#eef1f3]">
-            <div>
-              <h1 className="text-[27px] font-extrabold leading-[1.08] tracking-[-0.04em] text-[#111827]">
-                <span className="block">Seller</span>
-                <span className="block">Dashboard</span>
-              </h1>
-              <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-[0.12em] block mt-2">
-                Merchant Portal
-              </span>
+        {/* Header Title / Brand */}
+        <div className="shrink-0 border-b border-[#eef1f3] px-2 pb-5">
+          <div className="flex items-center justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <img src={sellerBrandMark} alt="" className="h-9 w-10 shrink-0 object-contain" />
+              <div className="min-w-0">
+                <h1 className="truncate text-[18px] font-bold tracking-tight text-[#111827]">
+                  Seller Dashboard
+                </h1>
+                <span className="mt-1 block text-[12px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                  Merchant Portal
+                </span>
+              </div>
             </div>
             <button
               onClick={() => setMobileMenuOpen(false)}
@@ -662,7 +665,9 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
               ✕
             </button>
           </div>
+        </div>
 
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pt-6">
           {/* Navigation Links */}
           <nav className="space-y-1.5">
             {navItems.map((item) => {
